@@ -1,0 +1,63 @@
+#!/usr/bin/make -f
+
+REPO ?= $(shell go list -m)
+VERSION ?= $(shell git describe --tags --dirty --always)
+
+# List of binaries to build. For now just one.
+BIN = bin
+DIRS = $(BIN)
+
+CMDS = $(notdir $(basename $(wildcard cmd/*)))
+BINS = $(addprefix $(BIN)/, $(CMDS))
+
+# Make all binaries
+all: $(DIRS) $(BINS)
+
+$(BINS): $(DIRS) dep
+	@echo "⇒ Build $@"
+	CGO_ENABLED=0 \
+	GO111MODULE=on \
+	go build -v -trimpath \
+	-ldflags "-X main.Version=$(VERSION)" \
+	-o $@ ./cmd/$(notdir $@)
+
+$(DIRS):
+	@echo "⇒ Ensure dir: $@"
+	@mkdir -p $@
+
+# Pull go dependencies
+dep:
+	@printf "⇒ Download requirements: "
+	@CGO_ENABLED=0 \
+	GO111MODULE=on \
+	go mod download && echo OK
+	@printf "⇒ Tidy requirements: "
+	@CGO_ENABLED=0 \
+	GO111MODULE=on \
+	go mod tidy -v && echo OK
+
+# Run tests
+test:
+	@go test ./... -cover
+
+# Run tests with race detection and produce coverage output
+cover:
+	@go test -v -race ./... -coverprofile=coverage.txt -covermode=atomic
+	@go tool cover -html=coverage.txt -o coverage.html
+
+# Run all code formatters
+fmts: fmt imports
+
+# Reformat code
+fmt:
+	@echo "⇒ Processing gofmt check"
+	@GO111MODULE=on gofmt -s -w ./
+
+# Reformat imports
+imports:
+	@echo "⇒ Processing goimports check"
+	@GO111MODULE=on goimports -w ./
+
+# Run linters
+lint:
+	@golangci-lint --timeout=5m run
