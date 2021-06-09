@@ -1,0 +1,17 @@
+oauth:
+  google:
+    id: "google id"
+    secret: "google secret"
+    scopes:
+      - "https://www.googleapis.com/auth/userinfo.email"
+    endpoint:
+      auth: "https://accounts.google.com/o/oauth2/auth"
+      token: "https://oauth2.googleapis.com/token"
+
+  github:
+    id: "github id"
+    secret: "github secret"
+    scopes:
+    endpoint:
+      auth: "https://github.com/login/oauth/authorize"
+      token: "https://github.com/login/oauth/access_token"
