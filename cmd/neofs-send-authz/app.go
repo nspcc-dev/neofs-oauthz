@@ -157,6 +157,7 @@ func (a *app) initAuthCfg(creds neofs.Credentials) {
 		Host:        a.cfg.GetString(cfgListenAddress),
 		Gateway:     a.cfg.GetString(cfgGateway),
 		ContainerID: containerStr,
+		RedirectURL: a.cfg.GetString(cfgRedirectURL),
 	}
 
 	scheme := "http"
