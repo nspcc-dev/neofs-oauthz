@@ -3,11 +3,9 @@ package auth
 import (
 	"context"
 	"crypto/rand"
-	"embed"
 	_ "embed"
 	"encoding/hex"
 	"fmt"
-	"html/template"
 	"net/http"
 
 	"github.com/nspcc-dev/neofs-api-go/pkg/client"
@@ -19,9 +17,6 @@ import (
 //go:embed static/index.html
 var indexHTML string
 
-//go:embed templates
-var formHTML embed.FS
-
 // Authenticator is an auth requests handler.
 type Authenticator struct {
 	log           *zap.Logger
@@ -29,7 +24,6 @@ type Authenticator struct {
 	generator     *bearer.Generator
 	config        *Config
 	services      *Services
-	template      *template.Template
 	templateModel model
 }
 
@@ -41,6 +35,7 @@ type Config struct {
 	Host        string
 	Gateway     string
 	ContainerID string
+	RedirectURL string
 }
 
 type model struct {
@@ -50,18 +45,12 @@ type model struct {
 
 // New creates authenticator using config.
 func New(log *zap.Logger, plant neofs.ClientPlant, config *Config) (*Authenticator, error) {
-	template, err := template.ParseFS(formHTML, "templates/form.html")
-	if err != nil {
-		return nil, err
-	}
-
 	return &Authenticator{
 		log:       log,
 		plant:     plant,
 		config:    config,
 		generator: bearer.NewGenerator(config.Bearer),
 		services:  NewServices(config.Oauth),
-		template:  template,
 		templateModel: model{
 			ContainerID: config.ContainerID,
 			GatewayURL:  config.Gateway,
@@ -134,10 +123,7 @@ func (u *Authenticator) Callback(w http.ResponseWriter, r *http.Request) {
 		MaxAge: 600,
 	})
 
-	if err := u.template.Execute(w, u.templateModel); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	http.Redirect(w, r, u.config.RedirectURL, http.StatusTemporaryRedirect)
 }
 
 func (u *Authenticator) getUserInfo(ctx context.Context, state, code string) (string, error) {
