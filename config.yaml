@@ -15,3 +15,6 @@ oauth:
     endpoint:
       auth: "https://github.com/login/oauth/authorize"
       token: "https://github.com/login/oauth/access_token"
+
+redirect:
+  url: "/"
