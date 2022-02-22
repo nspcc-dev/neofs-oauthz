@@ -5,12 +5,12 @@ import (
 	"encoding/base64"
 	"fmt"
 
-	"github.com/nspcc-dev/neofs-api-go/pkg/acl/eacl"
-	"github.com/nspcc-dev/neofs-api-go/pkg/container"
-	"github.com/nspcc-dev/neofs-api-go/pkg/owner"
-	"github.com/nspcc-dev/neofs-api-go/pkg/token"
+	"github.com/nspcc-dev/neo-go/pkg/crypto/keys"
 	"github.com/nspcc-dev/neofs-api-go/v2/acl"
-	"github.com/nspcc-dev/neofs-sdk-go/pkg/neofs"
+	cid "github.com/nspcc-dev/neofs-sdk-go/container/id"
+	"github.com/nspcc-dev/neofs-sdk-go/eacl"
+	"github.com/nspcc-dev/neofs-sdk-go/owner"
+	"github.com/nspcc-dev/neofs-sdk-go/token"
 )
 
 // Generator is bearer token generator.
@@ -25,9 +25,9 @@ func NewGenerator(config *Config) *Generator {
 
 // Config for bearer token generator.
 type Config struct {
-	Creds       neofs.Credentials
+	Key         *keys.PrivateKey
 	OwnerID     *owner.ID
-	ContainerID *container.ID
+	ContainerID *cid.ID
 	LifeTime    uint64
 }
 
@@ -56,7 +56,7 @@ func (b *Generator) NewBearer(email string, currentEpoch uint64) (string, string
 	lt.SetExp(currentEpoch + b.config.LifeTime)
 	bt.SetLifetime(lt.GetExp(), lt.GetNbf(), lt.GetIat())
 
-	if err := bt.SignToken(b.config.Creds.PrivateKey()); err != nil {
+	if err := bt.SignToken(&b.config.Key.PrivateKey); err != nil {
 		return "", "", err
 	}
 

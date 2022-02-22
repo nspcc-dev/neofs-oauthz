@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/nspcc-dev/neofs-api-go/pkg/client"
-	"github.com/nspcc-dev/neofs-sdk-go/pkg/neofs"
+	"github.com/nspcc-dev/neofs-sdk-go/client"
+	"github.com/nspcc-dev/neofs-sdk-go/pool"
 	"github.com/nspcc-dev/neofs-send-authz/bearer"
 	"go.uber.org/zap"
 )
@@ -20,7 +20,7 @@ var indexHTML string
 // Authenticator is an auth requests handler.
 type Authenticator struct {
 	log           *zap.Logger
-	plant         neofs.ClientPlant
+	sdkPool       pool.Pool
 	generator     *bearer.Generator
 	config        *Config
 	services      *Services
@@ -44,10 +44,10 @@ type model struct {
 }
 
 // New creates authenticator using config.
-func New(log *zap.Logger, plant neofs.ClientPlant, config *Config) (*Authenticator, error) {
+func New(log *zap.Logger, sdkPool pool.Pool, config *Config) (*Authenticator, error) {
 	return &Authenticator{
 		log:       log,
-		plant:     plant,
+		sdkPool:   sdkPool,
 		config:    config,
 		generator: bearer.NewGenerator(config.Bearer),
 		services:  NewServices(config.Oauth),
@@ -150,15 +150,15 @@ func (u *Authenticator) getUserInfo(ctx context.Context, state, code string) (st
 }
 
 func (u *Authenticator) getBearerToken(ctx context.Context, email string) (string, string, error) {
-	conn, sToken, err := u.plant.ConnectionArtifacts()
+	conn, _, err := u.sdkPool.Connection()
 	if err != nil {
 		return "", "", err
 	}
 
-	info, err := conn.NetworkInfo(ctx, client.WithSession(sToken))
+	infoRes, err := conn.NetworkInfo(ctx, client.PrmNetworkInfo{})
 	if err != nil {
 		return "", "", err
 	}
 
-	return u.generator.NewBearer(email, info.CurrentEpoch())
+	return u.generator.NewBearer(email, infoRes.Info().CurrentEpoch())
 }
