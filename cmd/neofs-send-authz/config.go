@@ -17,9 +17,6 @@ const (
 	defaultRequestTimeout = 15 * time.Second
 	defaultConnectTimeout = 30 * time.Second
 
-	defaultKeepaliveTime    = 10 * time.Second
-	defaultKeepaliveTimeout = 10 * time.Second
-
 	// Logger.
 	cfgLoggerLevel              = "logger.level"
 	cfgLoggerFormat             = "logger.format"
@@ -38,11 +35,6 @@ const (
 	cfgBearerLifetime = "bearer_lifetime"
 
 	cfgPeers = "peers"
-
-	// KeepAlive.
-	cfgKeepaliveTime                = "keepalive.time"
-	cfgKeepaliveTimeout             = "keepalive.timeout"
-	cfgKeepalivePermitWithoutStream = "keepalive.permit_without_stream"
 
 	cfgConTimeout = "connect_timeout"
 	cfgReqTimeout = "request_timeout"
@@ -123,10 +115,6 @@ func newConfig() *viper.Viper {
 	v.SetDefault(cfgLoggerSamplingInitial, 1000)
 	v.SetDefault(cfgLoggerSamplingThereafter, 1000)
 
-	v.SetDefault(cfgKeepaliveTime, defaultKeepaliveTime)
-	v.SetDefault(cfgKeepaliveTimeout, defaultKeepaliveTimeout)
-	v.SetDefault(cfgKeepalivePermitWithoutStream, true)
-
 	if err := v.BindPFlags(flags); err != nil {
 		panic(err)
 	}
@@ -169,6 +157,7 @@ func newConfig() *viper.Viper {
 		for i := range *peers {
 			v.SetDefault(cfgPeers+"."+strconv.Itoa(i)+".address", (*peers)[i])
 			v.SetDefault(cfgPeers+"."+strconv.Itoa(i)+".weight", 1)
+			v.SetDefault(cfgPeers+"."+strconv.Itoa(i)+".priority", 1)
 		}
 	}
 
