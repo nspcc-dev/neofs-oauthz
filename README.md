@@ -37,7 +37,7 @@ After build you can run the app (**note:** config.yaml must be in the directory 
 In the following example it must be **"./config.yaml"**):
 
 ```
-./bin/neofs-send-authz -p s01.neofs.devenv:8080 --key KxDgvEKzgSBPPfuVfw67oPQBSjidEiqTHURKSDL1R7yGaGYAeYnr --owner_id NQydaT4iTL9rCuUbRL5GZ2phCopxX9yJYY --cid 2Z4mjBwgm1wVoFDeMDvWMgLqqLrVhgSm5RtDG6uAo7Jj --listen_address localhost:8083 --gateway localhost:8082
+./bin/neofs-send-authz -p s01.neofs.devenv:8080 --key KxDgvEKzgSBPPfuVfw67oPQBSjidEiqTHURKSDL1R7yGaGYAeYnr --owner_id NQydaT4iTL9rCuUbRL5GZ2phCopxX9yJYY --cid 2Z4mjBwgm1wVoFDeMDvWMgLqqLrVhgSm5RtDG6uAo7Jj --listen_address localhost:8083 
 ```
 
 Arguments:
@@ -45,8 +45,7 @@ Arguments:
 ```
 -p s01.neofs.devenv:8080 // neofs node connection endpoint to get current epoch
 --key KxDgvEKzgSBPPfuVfw67oPQBSjidEiqTHURKSDL1R7yGaGYAeYnr // key to sing bearer token (must be container owner key)
---cid 2Z4mjBwgm1wVoFDeMDvWMgLqqLrVhgSm5RtDG6uAo7Jj // container id
---owner_id NQydaT4iTL9rCuUbRL5GZ2phCopxX9yJYY // owner token id (must be http-gateway id)
+--cid 2Z4mjBwgm1wVoFDeMDvWMgLqqLrVhgSm5RtDG6uAo7Jj // container id (used to fill correspond field in the bearer token)
+--owner_id NQydaT4iTL9rCuUbRL5GZ2phCopxX9yJYY // owner token id (used to fill correspond field in the bearer token)
 --listen_address localhost:8083 // address to start server
---gateway localhost:8082 // http gateway address
 ```

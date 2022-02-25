@@ -30,7 +30,6 @@ const (
 	cfgTLSCertificate = "tls_certificate"
 	cfgTLSKey         = "tls_key"
 	cfgContainerID    = "cid"
-	cfgGateway        = "gateway"
 	cfgOwnerID        = "owner_id"
 	cfgBearerLifetime = "bearer_lifetime"
 
@@ -99,7 +98,6 @@ func newConfig() *viper.Viper {
 	flags.Duration(cfgReqTimeout, defaultRequestTimeout, "gRPC request timeout")
 	flags.Duration(cfgRebalance, defaultRebalanceTimer, "gRPC connection rebalance timer")
 	flags.String(cfgListenAddress, "0.0.0.0:8083", "address to listen")
-	flags.String(cfgGateway, "localhost:8082", `gateway url`)
 	flags.String(cfgTLSCertificate, "", "TLS certificate path")
 	flags.String(cfgTLSKey, "", "TLS key path")
 	flags.Uint64(cfgBearerLifetime, 30, "bearer lifetime in epoch")

@@ -150,8 +150,6 @@ func (a *app) initAuthCfg(key *keys.PrivateKey) {
 		Oauth:       make(map[string]*auth.ServiceOauth),
 		TLSEnabled:  a.cfg.GetString(cfgTLSCertificate) != "" || a.cfg.GetString(cfgTLSKey) != "",
 		Host:        a.cfg.GetString(cfgListenAddress),
-		Gateway:     a.cfg.GetString(cfgGateway),
-		ContainerID: containerStr,
 		RedirectURL: a.cfg.GetString(cfgRedirectURL),
 	}
 
