@@ -19,12 +19,11 @@ var indexHTML string
 
 // Authenticator is an auth requests handler.
 type Authenticator struct {
-	log           *zap.Logger
-	sdkPool       pool.Pool
-	generator     *bearer.Generator
-	config        *Config
-	services      *Services
-	templateModel model
+	log       *zap.Logger
+	sdkPool   pool.Pool
+	generator *bearer.Generator
+	config    *Config
+	services  *Services
 }
 
 // Config for authenticator handler.
@@ -33,14 +32,7 @@ type Config struct {
 	Oauth       map[string]*ServiceOauth
 	TLSEnabled  bool
 	Host        string
-	Gateway     string
-	ContainerID string
 	RedirectURL string
-}
-
-type model struct {
-	GatewayURL  string
-	ContainerID string
 }
 
 // New creates authenticator using config.
@@ -51,10 +43,6 @@ func New(log *zap.Logger, sdkPool pool.Pool, config *Config) (*Authenticator, er
 		config:    config,
 		generator: bearer.NewGenerator(config.Bearer),
 		services:  NewServices(config.Oauth),
-		templateModel: model{
-			ContainerID: config.ContainerID,
-			GatewayURL:  config.Gateway,
-		},
 	}, nil
 }
 
