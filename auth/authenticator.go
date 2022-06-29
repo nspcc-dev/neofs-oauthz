@@ -28,11 +28,12 @@ type Authenticator struct {
 
 // Config for authenticator handler.
 type Config struct {
-	Bearer      *bearer.Config
-	Oauth       map[string]*ServiceOauth
-	TLSEnabled  bool
-	Host        string
-	RedirectURL string
+	Bearer        *bearer.Config
+	Oauth         map[string]*ServiceOauth
+	TLSEnabled    bool
+	Host          string
+	RedirectURL   string
+	RedirectOauth string
 }
 
 // New creates authenticator using config.
