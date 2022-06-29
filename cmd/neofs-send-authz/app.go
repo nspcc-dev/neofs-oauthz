@@ -147,17 +147,22 @@ func (a *app) initAuthCfg(key *keys.PrivateKey) {
 			ContainerID: containerID,
 			LifeTime:    a.cfg.GetUint64(cfgBearerLifetime),
 		},
-		Oauth:       make(map[string]*auth.ServiceOauth),
-		TLSEnabled:  a.cfg.GetString(cfgTLSCertificate) != "" || a.cfg.GetString(cfgTLSKey) != "",
-		Host:        a.cfg.GetString(cfgListenAddress),
-		RedirectURL: a.cfg.GetString(cfgRedirectURL),
+		Oauth:         make(map[string]*auth.ServiceOauth),
+		TLSEnabled:    a.cfg.GetString(cfgTLSCertificate) != "" || a.cfg.GetString(cfgTLSKey) != "",
+		Host:          a.cfg.GetString(cfgListenAddress),
+		RedirectURL:   a.cfg.GetString(cfgRedirectURL),
+		RedirectOauth: a.cfg.GetString(cfgRedirectOauth),
 	}
 
 	scheme := "http"
 	if a.authCfg.TLSEnabled {
 		scheme += "s"
 	}
-	redirectURL := fmt.Sprintf(callbackURLFmt, scheme, a.authCfg.Host)
+	base := a.authCfg.Host
+	if len(a.authCfg.RedirectOauth) != 0 {
+		base = a.authCfg.RedirectOauth
+	}
+	redirectURL := fmt.Sprintf(callbackURLFmt, scheme, base)
 
 	for key := range a.cfg.GetStringMap(cfgOauth) {
 		oauth := &oauth2.Config{

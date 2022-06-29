@@ -57,6 +57,7 @@ const (
 	cfgOauthEndpointAuthFmt  = "oauth.%s.endpoint.auth"
 	cfgOauthEndpointTokenFmt = "oauth.%s.endpoint.token"
 	cfgRedirectURL           = "redirect.url"
+	cfgRedirectOauth         = "redirect.oauth"
 	callbackURLFmt           = "%s://%s/callback"
 )
 
