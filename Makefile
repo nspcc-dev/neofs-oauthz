@@ -1,7 +1,7 @@
 #!/usr/bin/make -f
 
 REPO ?= $(shell go list -m)
-VERSION ?= $(shell git describe --tags --dirty --always)
+VERSION ?= $(shell git describe --tags --match "v*" --dirty --always)
 
 HUB_IMAGE ?= nspccdev/neofs-send-authz
 HUB_TAG ?= "$(shell echo ${VERSION} | sed 's/^v//')"
