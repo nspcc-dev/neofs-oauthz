@@ -29,7 +29,14 @@ oauth:
     endpoint:
       auth: "https://github.com/login/oauth/authorize"
       token: "https://github.com/login/oauth/access_token"
-
+```
+Also, to configure NeoFS credentials, add to **config.yaml** the following section:
+```yaml
+neofs:
+  wallet:
+    path: /path/to/wallet.json
+    passphrase: '' # Passphrase to decrypt wallet. If you're using a wallet without a password, place '' here.
+    address:  NfgHwwTi3wHAS8aFAN243C5vGbkYDpqLHP # Account address. If omitted default one will be used.
 ```
 
 ### Run
@@ -37,14 +44,13 @@ After build you can run the app (**note:** config.yaml must be in the directory 
 In the following example it must be **"./config.yaml"**):
 
 ```
-./bin/neofs-send-authz -p s01.neofs.devenv:8080 --key KxDgvEKzgSBPPfuVfw67oPQBSjidEiqTHURKSDL1R7yGaGYAeYnr --owner_id NQydaT4iTL9rCuUbRL5GZ2phCopxX9yJYY --cid 2Z4mjBwgm1wVoFDeMDvWMgLqqLrVhgSm5RtDG6uAo7Jj --listen_address localhost:8083 
+./bin/neofs-send-authz -p s01.neofs.devenv:8080 --owner_id NQydaT4iTL9rCuUbRL5GZ2phCopxX9yJYY --cid 2Z4mjBwgm1wVoFDeMDvWMgLqqLrVhgSm5RtDG6uAo7Jj --listen_address localhost:8083 
 ```
 
 Arguments:
 
 ```
 -p s01.neofs.devenv:8080 // neofs node connection endpoint to get current epoch
---key KxDgvEKzgSBPPfuVfw67oPQBSjidEiqTHURKSDL1R7yGaGYAeYnr // key to sing bearer token (must be container owner key)
 --cid 2Z4mjBwgm1wVoFDeMDvWMgLqqLrVhgSm5RtDG6uAo7Jj // container id (used to fill correspond field in the bearer token)
 --owner_id NQydaT4iTL9rCuUbRL5GZ2phCopxX9yJYY // owner token id (used to fill correspond field in the bearer token)
 --listen_address localhost:8083 // address to start server

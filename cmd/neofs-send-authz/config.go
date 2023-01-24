@@ -26,12 +26,15 @@ const (
 	cfgLoggerSamplingInitial    = "logger.sampling.initial"
 	cfgLoggerSamplingThereafter = "logger.sampling.thereafter"
 
-	cfgListenAddress  = "listen_address"
-	cfgTLSCertificate = "tls_certificate"
-	cfgTLSKey         = "tls_key"
-	cfgContainerID    = "cid"
-	cfgOwnerID        = "owner_id"
-	cfgBearerLifetime = "bearer_lifetime"
+	cfgListenAddress         = "listen_address"
+	cfgTLSCertificate        = "tls_certificate"
+	cfgTLSKey                = "tls_key"
+	cfgContainerID           = "cid"
+	cfgOwnerID               = "owner_id"
+	cfgBearerLifetime        = "bearer_lifetime"
+	cfgNeoFSWalletPath       = "neofs.wallet.path"
+	cfgNeoFSWalletPassphrase = "neofs.wallet.passphrase"
+	cfgNeoFSWalletAddress    = "neofs.wallet.address"
 
 	cfgPeers = "peers"
 
@@ -44,9 +47,8 @@ const (
 	cfgApplicationVersion = "app.version"
 
 	// Command line args.
-	cmdHelp     = "help"
-	cmdVersion  = "version"
-	cmdNeoFSKey = "key"
+	cmdHelp    = "help"
+	cmdVersion = "version"
 )
 
 const (
@@ -86,7 +88,6 @@ func newConfig() *viper.Viper {
 	help := flags.BoolP(cmdHelp, "h", false, "show help")
 	version := flags.BoolP(cmdVersion, "v", false, "show version")
 
-	flags.StringP(cmdNeoFSKey, "k", "", `path to private key file, hex string or wif `)
 	flags.String(cfgContainerID, "", `container id`)
 	flags.String(cfgOwnerID, "", `token owner`)
 
