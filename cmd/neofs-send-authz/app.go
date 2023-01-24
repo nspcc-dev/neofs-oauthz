@@ -6,7 +6,11 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/nspcc-dev/neo-go/cli/flags"
+	"github.com/nspcc-dev/neo-go/cli/input"
 	"github.com/nspcc-dev/neo-go/pkg/crypto/keys"
+	"github.com/nspcc-dev/neo-go/pkg/util"
+	"github.com/nspcc-dev/neo-go/pkg/wallet"
 	cid "github.com/nspcc-dev/neofs-sdk-go/container/id"
 	"github.com/nspcc-dev/neofs-sdk-go/owner"
 	"github.com/nspcc-dev/neofs-sdk-go/pool"
@@ -70,13 +74,7 @@ func newApp(ctx context.Context, opt ...Option) App {
 		opt[i](a)
 	}
 
-	var key *keys.PrivateKey
-	keystring := a.cfg.GetString(cmdNeoFSKey)
-	if len(keystring) == 0 {
-		err = fmt.Errorf("no key specified")
-	} else {
-		key, err = keys.NewPrivateKeyFromWIF(keystring)
-	}
+	key, err := a.getKey()
 	if err != nil {
 		a.log.Fatal("failed to get neofs credentials", zap.Error(err))
 	}
@@ -114,6 +112,51 @@ func newApp(ctx context.Context, opt ...Option) App {
 	}
 
 	return a
+}
+
+func (a *app) getKey() (*keys.PrivateKey, error) {
+	walletPath := a.cfg.GetString(cfgNeoFSWalletPath)
+	if len(walletPath) == 0 {
+		return nil, fmt.Errorf("wallet path can't be empty")
+	}
+
+	wlt, err := wallet.NewWalletFromFile(walletPath)
+	if err != nil {
+		return nil, err
+	}
+
+	var addr util.Uint160
+	addrStr := a.cfg.GetString(cfgNeoFSWalletAddress)
+	if len(addrStr) == 0 {
+		addr = wlt.GetChangeAddress()
+	} else {
+		addr, err = flags.ParseAddress(addrStr)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	account := wlt.GetAccount(addr)
+	if account == nil {
+		return nil, fmt.Errorf("couldn't find wallet account: %s", addrStr)
+	}
+
+	var password string
+	if a.cfg.IsSet(cfgNeoFSWalletPassphrase) {
+		password = a.cfg.GetString(cfgNeoFSWalletPassphrase)
+	} else {
+		pwd, err := input.ReadPassword(fmt.Sprintf("Enter password for %s > ", walletPath))
+		if err != nil {
+			return nil, fmt.Errorf("couldn't read password")
+		}
+		password = pwd
+	}
+
+	if err = account.Decrypt(password, wlt.Scrypt); err != nil {
+		return nil, err
+	}
+
+	return account.PrivateKey(), nil
 }
 
 func (a *app) initAuthCfg(key *keys.PrivateKey) {
