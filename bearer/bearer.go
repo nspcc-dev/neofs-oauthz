@@ -5,12 +5,12 @@ import (
 	"encoding/base64"
 	"fmt"
 
-	"github.com/nspcc-dev/neo-go/pkg/crypto/keys"
+	"github.com/nspcc-dev/neofs-api-go/pkg/acl/eacl"
+	"github.com/nspcc-dev/neofs-api-go/pkg/container"
+	"github.com/nspcc-dev/neofs-api-go/pkg/owner"
+	"github.com/nspcc-dev/neofs-api-go/pkg/token"
 	"github.com/nspcc-dev/neofs-api-go/v2/acl"
-	cid "github.com/nspcc-dev/neofs-sdk-go/container/id"
-	"github.com/nspcc-dev/neofs-sdk-go/eacl"
-	"github.com/nspcc-dev/neofs-sdk-go/owner"
-	"github.com/nspcc-dev/neofs-sdk-go/token"
+	"github.com/nspcc-dev/neofs-sdk-go/pkg/neofs"
 )
 
 // Generator is bearer token generator.
@@ -25,30 +25,42 @@ func NewGenerator(config *Config) *Generator {
 
 // Config for bearer token generator.
 type Config struct {
-	Key         *keys.PrivateKey
+	Creds       neofs.Credentials
 	OwnerID     *owner.ID
-	ContainerID *cid.ID
+	ContainerID *container.ID
 	LifeTime    uint64
 }
 
 // NewBearer generates new token for supplied email.
 func (b *Generator) NewBearer(email string, currentEpoch uint64) (string, string, error) {
+
 	hashedEmail := fmt.Sprintf("%x", sha256.Sum256([]byte(email)))
 
 	bt := token.NewBearerToken()
-	bt.SetOwner(b.config.OwnerID)
+	//bt.SetOwner(b.config.OwnerID)
 
 	t := new(eacl.Table)
 	t.SetCID(b.config.ContainerID)
 
 	// order of rec is important
+
 	rec := eacl.CreateRecord(eacl.ActionAllow, eacl.OperationPut)
 	rec.AddObjectAttributeFilter(eacl.MatchStringEqual, "Email", hashedEmail)
 	eacl.AddFormedTarget(rec, eacl.RoleOthers)
 	t.AddRecord(rec)
+
 	rec2 := eacl.CreateRecord(eacl.ActionDeny, eacl.OperationPut)
 	eacl.AddFormedTarget(rec2, eacl.RoleOthers)
 	t.AddRecord(rec2)
+
+	rec3 := eacl.CreateRecord(eacl.ActionAllow, eacl.OperationPut)
+	rec3.AddObjectAttributeFilter(eacl.MatchStringEqual, "Email", hashedEmail)
+	eacl.AddFormedTarget(rec3, eacl.RoleUser)
+	t.AddRecord(rec3)
+
+	rec4 := eacl.CreateRecord(eacl.ActionDeny, eacl.OperationPut)
+	eacl.AddFormedTarget(rec4, eacl.RoleUser)
+	t.AddRecord(rec4)
 
 	bt.SetEACLTable(t)
 
@@ -56,7 +68,7 @@ func (b *Generator) NewBearer(email string, currentEpoch uint64) (string, string
 	lt.SetExp(currentEpoch + b.config.LifeTime)
 	bt.SetLifetime(lt.GetExp(), lt.GetNbf(), lt.GetIat())
 
-	if err := bt.SignToken(&b.config.Key.PrivateKey); err != nil {
+	if err := bt.SignToken(b.config.Creds.PrivateKey()); err != nil {
 		return "", "", err
 	}
 

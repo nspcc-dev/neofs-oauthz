@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/nspcc-dev/neofs-sdk-go/client"
-	"github.com/nspcc-dev/neofs-sdk-go/pool"
+	"github.com/nspcc-dev/neofs-api-go/pkg/client"
+	"github.com/nspcc-dev/neofs-sdk-go/pkg/neofs"
 	"github.com/nspcc-dev/neofs-send-authz/bearer"
 	"go.uber.org/zap"
 )
@@ -20,7 +20,7 @@ var indexHTML string
 // Authenticator is an auth requests handler.
 type Authenticator struct {
 	log       *zap.Logger
-	sdkPool   pool.Pool
+	plant     neofs.ClientPlant
 	generator *bearer.Generator
 	config    *Config
 	services  *Services
@@ -28,19 +28,18 @@ type Authenticator struct {
 
 // Config for authenticator handler.
 type Config struct {
-	Bearer        *bearer.Config
-	Oauth         map[string]*ServiceOauth
-	TLSEnabled    bool
-	Host          string
-	RedirectURL   string
-	RedirectOauth string
+	Bearer      *bearer.Config
+	Oauth       map[string]*ServiceOauth
+	TLSEnabled  bool
+	Host        string
+	RedirectURL string
 }
 
 // New creates authenticator using config.
-func New(log *zap.Logger, sdkPool pool.Pool, config *Config) (*Authenticator, error) {
+func New(log *zap.Logger, plant neofs.ClientPlant, config *Config) (*Authenticator, error) {
 	return &Authenticator{
 		log:       log,
-		sdkPool:   sdkPool,
+		plant:     plant,
 		config:    config,
 		generator: bearer.NewGenerator(config.Bearer),
 		services:  NewServices(config.Oauth),
@@ -103,13 +102,19 @@ func (u *Authenticator) Callback(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &http.Cookie{
 		Name:   "Bearer",
 		Value:  strToken,
-		MaxAge: 600,
+		MaxAge: 2400,
 	})
 
 	http.SetCookie(w, &http.Cookie{
 		Name:   "X-Attribute-Email",
 		Value:  hashedEmail,
-		MaxAge: 600,
+		MaxAge: 2400,
+	})
+
+	http.SetCookie(w, &http.Cookie{
+		Name:   "Email",
+		Value:  email,
+		MaxAge: 2400,
 	})
 
 	http.Redirect(w, r, u.config.RedirectURL, http.StatusTemporaryRedirect)
@@ -139,15 +144,15 @@ func (u *Authenticator) getUserInfo(ctx context.Context, state, code string) (st
 }
 
 func (u *Authenticator) getBearerToken(ctx context.Context, email string) (string, string, error) {
-	conn, _, err := u.sdkPool.Connection()
+	conn, sToken, err := u.plant.ConnectionArtifacts()
 	if err != nil {
 		return "", "", err
 	}
 
-	infoRes, err := conn.NetworkInfo(ctx, client.PrmNetworkInfo{})
+	info, err := conn.NetworkInfo(ctx, client.WithSession(sToken))
 	if err != nil {
 		return "", "", err
 	}
 
-	return u.generator.NewBearer(email, infoRes.Info().CurrentEpoch())
+	return u.generator.NewBearer(email, info.CurrentEpoch())
 }

@@ -1,10 +1,7 @@
 #!/usr/bin/make -f
 
 REPO ?= $(shell go list -m)
-VERSION ?= $(shell git describe --tags --match "v*" --dirty --always)
-
-HUB_IMAGE ?= nspccdev/neofs-send-authz
-HUB_TAG ?= "$(shell echo ${VERSION} | sed 's/^v//')"
+VERSION ?= $(shell git describe --tags --dirty --always)
 
 # List of binaries to build. For now just one.
 BIN = bin
@@ -38,15 +35,6 @@ dep:
 	@CGO_ENABLED=0 \
 	GO111MODULE=on \
 	go mod tidy -v && echo OK
-
-image:
-	@echo "⇒ Build NeoFS Send Auth docker image "
-	@docker build \
-		--build-arg REPO=$(REPO) \
-		--build-arg VERSION=$(VERSION) \
-		--rm \
-		-f Dockerfile \
-		-t $(HUB_IMAGE):$(HUB_TAG) .
 
 # Run tests
 test:

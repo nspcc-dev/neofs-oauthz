@@ -1,7 +1,7 @@
 oauth:
   google:
-    id: "google id"
-    secret: "google secret"
+    id: "663446410611-fbosft588qtf928hd9kkmr7nbv216q22.apps.googleusercontent.com"
+    secret: "ozf5UIVxgGbU74eeOevhj2nQ"
     scopes:
       - "https://www.googleapis.com/auth/userinfo.email"
     endpoint:
@@ -9,23 +9,17 @@ oauth:
       token: "https://oauth2.googleapis.com/token"
 
   github:
-    id: "github id"
-    secret: "github secret"
+    id: "8bcd3d739a0db3a116aa"
+    secret: "054458845968c945b1f440793757f8cf50434b5e"
     scopes:
     endpoint:
       auth: "https://github.com/login/oauth/authorize"
       token: "https://github.com/login/oauth/access_token"
 
 redirect:
-  # This URL base is used to prepare callback URL for authentication server.
-  # If omitted, then listen address is used. Should not contain scheme.
-  oauth: "my.website.com:8080"
-  # Redirect to this URL **after** successful authentication
-  url: "/"
+  url: "https://send.fs.neo.org/"
+cid: CVKKwyX1Wa97Z2skoUgHxujb6Z4t7hfeSBGePrPskDW
+owner
 
-neofs:
-  wallet:
-    path: /path/to/wallet.json
-    passphrase: '' # Passphrase to decrypt wallet. If you're using a wallet without a password, place '' here.
-    address:  NfgHwwTi3wHAS8aFAN243C5vGbkYDpqLHP # Account address. If omitted default one will be used.
-    
+  
+

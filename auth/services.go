@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
+	"io/ioutil"
 	"net/http"
 	"sync"
 
@@ -108,7 +108,7 @@ func (c *ServiceOauth) GetUserEmail(ctx context.Context, token *oauth2.Token) (s
 	}
 
 	defer response.Body.Close()
-	contents, err := io.ReadAll(response.Body)
+	contents, err := ioutil.ReadAll(response.Body)
 	if err != nil {
 		return "", fmt.Errorf("failed reading response body: %s", err.Error())
 	}

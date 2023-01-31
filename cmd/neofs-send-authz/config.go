@@ -17,6 +17,9 @@ const (
 	defaultRequestTimeout = 15 * time.Second
 	defaultConnectTimeout = 30 * time.Second
 
+	defaultKeepaliveTime    = 10 * time.Second
+	defaultKeepaliveTimeout = 10 * time.Second
+
 	// Logger.
 	cfgLoggerLevel              = "logger.level"
 	cfgLoggerFormat             = "logger.format"
@@ -26,17 +29,20 @@ const (
 	cfgLoggerSamplingInitial    = "logger.sampling.initial"
 	cfgLoggerSamplingThereafter = "logger.sampling.thereafter"
 
-	cfgListenAddress         = "listen_address"
-	cfgTLSCertificate        = "tls_certificate"
-	cfgTLSKey                = "tls_key"
-	cfgContainerID           = "cid"
-	cfgOwnerID               = "owner_id"
-	cfgBearerLifetime        = "bearer_lifetime"
-	cfgNeoFSWalletPath       = "neofs.wallet.path"
-	cfgNeoFSWalletPassphrase = "neofs.wallet.passphrase"
-	cfgNeoFSWalletAddress    = "neofs.wallet.address"
+	cfgListenAddress  = "listen_address"
+	cfgTLSCertificate = "tls_certificate"
+	cfgTLSKey         = "tls_key"
+	cfgContainerID    = "cid"
+	cfgGateway        = "gateway"
+	cfgOwnerID        = "owner_id"
+	cfgBearerLifetime = "bearer_lifetime"
 
 	cfgPeers = "peers"
+
+	// KeepAlive.
+	cfgKeepaliveTime                = "keepalive.time"
+	cfgKeepaliveTimeout             = "keepalive.timeout"
+	cfgKeepalivePermitWithoutStream = "keepalive.permit_without_stream"
 
 	cfgConTimeout = "connect_timeout"
 	cfgReqTimeout = "request_timeout"
@@ -47,8 +53,9 @@ const (
 	cfgApplicationVersion = "app.version"
 
 	// Command line args.
-	cmdHelp    = "help"
-	cmdVersion = "version"
+	cmdHelp     = "help"
+	cmdVersion  = "version"
+	cmdNeoFSKey = "key"
 )
 
 const (
@@ -59,7 +66,6 @@ const (
 	cfgOauthEndpointAuthFmt  = "oauth.%s.endpoint.auth"
 	cfgOauthEndpointTokenFmt = "oauth.%s.endpoint.token"
 	cfgRedirectURL           = "redirect.url"
-	cfgRedirectOauth         = "redirect.oauth"
 	callbackURLFmt           = "%s://%s/callback"
 )
 
@@ -88,6 +94,7 @@ func newConfig() *viper.Viper {
 	help := flags.BoolP(cmdHelp, "h", false, "show help")
 	version := flags.BoolP(cmdVersion, "v", false, "show version")
 
+	flags.StringP(cmdNeoFSKey, "k", "", `path to private key file, hex string or wif `)
 	flags.String(cfgContainerID, "", `container id`)
 	flags.String(cfgOwnerID, "", `token owner`)
 
@@ -100,6 +107,7 @@ func newConfig() *viper.Viper {
 	flags.Duration(cfgReqTimeout, defaultRequestTimeout, "gRPC request timeout")
 	flags.Duration(cfgRebalance, defaultRebalanceTimer, "gRPC connection rebalance timer")
 	flags.String(cfgListenAddress, "0.0.0.0:8083", "address to listen")
+	flags.String(cfgGateway, "localhost:8082", `gateway url`)
 	flags.String(cfgTLSCertificate, "", "TLS certificate path")
 	flags.String(cfgTLSKey, "", "TLS key path")
 	flags.Uint64(cfgBearerLifetime, 30, "bearer lifetime in epoch")
@@ -114,6 +122,10 @@ func newConfig() *viper.Viper {
 	v.SetDefault(cfgLoggerNoDisclaimer, true)
 	v.SetDefault(cfgLoggerSamplingInitial, 1000)
 	v.SetDefault(cfgLoggerSamplingThereafter, 1000)
+
+	v.SetDefault(cfgKeepaliveTime, defaultKeepaliveTime)
+	v.SetDefault(cfgKeepaliveTimeout, defaultKeepaliveTimeout)
+	v.SetDefault(cfgKeepalivePermitWithoutStream, true)
 
 	if err := v.BindPFlags(flags); err != nil {
 		panic(err)
@@ -157,7 +169,6 @@ func newConfig() *viper.Viper {
 		for i := range *peers {
 			v.SetDefault(cfgPeers+"."+strconv.Itoa(i)+".address", (*peers)[i])
 			v.SetDefault(cfgPeers+"."+strconv.Itoa(i)+".weight", 1)
-			v.SetDefault(cfgPeers+"."+strconv.Itoa(i)+".priority", 1)
 		}
 	}
 
