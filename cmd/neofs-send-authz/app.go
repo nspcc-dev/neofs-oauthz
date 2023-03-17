@@ -116,6 +116,7 @@ func (a *app) initPool(ctx context.Context, key *keys.PrivateKey) {
 		weight := a.cfg.GetFloat64(key + "weight")
 		priority := a.cfg.GetInt(key + "priority")
 		if address == "" {
+			a.log.Warn("skip, empty address")
 			break
 		}
 		if weight <= 0 { // unspecified or wrong

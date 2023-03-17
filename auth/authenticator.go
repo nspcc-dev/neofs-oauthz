@@ -49,6 +49,7 @@ func New(log *zap.Logger, sdkPool *pool.Pool, config *Config) (*Authenticator, e
 func (u *Authenticator) Index(w http.ResponseWriter, _ *http.Request) {
 	_, err := fmt.Fprint(w, indexHTML)
 	if err != nil {
+		u.log.Error("couldn't write to w indexHTML", zap.Error(err))
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -58,20 +59,26 @@ func (u *Authenticator) LogInWith(w http.ResponseWriter, r *http.Request) {
 	keys, ok := r.URL.Query()["service"]
 
 	if !ok || len(keys[0]) < 1 {
-		http.Error(w, "no valid service param", http.StatusBadRequest)
+		msg := "no valid service param"
+		u.log.Error(msg)
+		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
 
 	serviceName := keys[0]
 	config, ok := u.services.Oauth(serviceName)
 	if !ok {
-		http.Error(w, "unsupported service", http.StatusBadRequest)
+		msg := "unsupported service"
+		u.log.Error(msg)
+		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
 
 	b := make([]byte, 8)
 	if _, err := rand.Read(b); err != nil {
-		http.Error(w, "unable generate state", http.StatusInternalServerError)
+		msg := "unable to generate state"
+		u.log.Error(msg, zap.Error(err))
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 
@@ -92,6 +99,7 @@ func (u *Authenticator) Callback(w http.ResponseWriter, r *http.Request) {
 
 	strToken, hashedEmail, err := u.getBearerToken(r.Context(), email)
 	if err != nil {
+		u.log.Error("getting bearer token failed", zap.Error(err))
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
