@@ -21,14 +21,7 @@ const (
 	defaultListenAddress = "0.0.0.0:8083"
 
 	// Logger.
-	cfgLoggerLevel = "logger.level"
-	cfgLoggerFormat             = "logger.format"
-	cfgLoggerTraceLevel         = "logger.trace_level"
-	cfgLoggerNoCaller           = "logger.no_caller"
-	cfgLoggerNoDisclaimer       = "logger.no_disclaimer"
-	cfgLoggerSamplingInitial    = "logger.sampling.initial"
-	cfgLoggerSamplingThereafter = "logger.sampling.thereafter"
-
+	cfgLoggerLevel    = "logger.level"
 	cfgListenAddress  = "listen_address"
 	cfgTLSCertificate = "tls_certificate"
 	cfgTLSKey         = "tls_key"
@@ -90,15 +83,6 @@ func newConfig() *viper.Viper {
 		panic(err)
 	}
 
-	// logger:
-	v.SetDefault(cfgLoggerLevel, "debug")
-	v.SetDefault(cfgLoggerFormat, "console")
-	v.SetDefault(cfgLoggerTraceLevel, "panic")
-	v.SetDefault(cfgLoggerNoCaller, false)
-	v.SetDefault(cfgLoggerNoDisclaimer, true)
-	v.SetDefault(cfgLoggerSamplingInitial, 1000)
-	v.SetDefault(cfgLoggerSamplingThereafter, 1000)
-
 	if err := v.BindPFlags(flags); err != nil {
 		panic(err)
 	}
@@ -139,6 +123,20 @@ func newConfig() *viper.Viper {
 	}
 
 	return v
+}
+
+func newLogger(v *viper.Viper) (*zap.Logger, error) {
+	var err error
+	// default log level is debug
+	c := zap.NewDevelopmentConfig()
+	if v.IsSet(cfgLoggerLevel) {
+		c.Level, err = zap.ParseAtomicLevel(v.GetString(cfgLoggerLevel))
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return c.Build()
 }
 
 func readConfig(v *viper.Viper) error {
