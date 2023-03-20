@@ -91,14 +91,30 @@ func (a *app) initPool(ctx context.Context, key *keys.PrivateKey) {
 		p   pool.InitParameters
 	)
 	p.SetKey(&key.PrivateKey)
-	p.SetNodeDialTimeout(a.cfg.GetDuration(cfgConTimeout))
-	p.SetHealthcheckTimeout(a.cfg.GetDuration(cfgReqTimeout))
-	p.SetClientRebalanceInterval(a.cfg.GetDuration(cfgRebalance))
+
+	connTimeout := a.cfg.GetDuration(cfgConTimeout)
+	if connTimeout <= 0 {
+		connTimeout = defaultConnectTimeout
+	}
+	p.SetNodeDialTimeout(connTimeout)
+
+	healthCheckTimeout := a.cfg.GetDuration(cfgReqTimeout)
+	if healthCheckTimeout <= 0 {
+		healthCheckTimeout = defaultRequestTimeout
+	}
+	p.SetHealthcheckTimeout(healthCheckTimeout)
+
+	rebalanceInterval := a.cfg.GetDuration(cfgRebalance)
+	if rebalanceInterval <= 0 {
+		rebalanceInterval = defaultRebalanceTimer
+	}
+	p.SetClientRebalanceInterval(rebalanceInterval)
 
 	for i := 0; ; i++ {
-		address := a.cfg.GetString(cfgPeers + "." + strconv.Itoa(i) + ".address")
-		weight := a.cfg.GetFloat64(cfgPeers + "." + strconv.Itoa(i) + ".weight")
-		priority := a.cfg.GetInt(cfgPeers + "." + strconv.Itoa(i) + ".priority")
+		key := cfgPeers + "." + strconv.Itoa(i) + "."
+		address := a.cfg.GetString(key + "address")
+		weight := a.cfg.GetFloat64(key + "weight")
+		priority := a.cfg.GetInt(key + "priority")
 		if address == "" {
 			break
 		}
@@ -178,16 +194,26 @@ func (a *app) initAuthCfg(key *keys.PrivateKey) {
 		a.log.Fatal("user id is empty or malformed", zap.Error(err))
 	}
 
+	lifetime := a.cfg.GetUint64(cfgBearerLifetime)
+	if lifetime == 0 {
+		lifetime = defaultBearerLifetime
+	}
+
+	listenAddress := a.cfg.GetString(cfgListenAddress)
+	if len(listenAddress) == 0 {
+		listenAddress = defaultListenAddress
+	}
+
 	a.authCfg = &auth.Config{
 		Bearer: &bearer.Config{
 			Key:         key,
 			OwnerID:     ownerID,
 			ContainerID: containerID,
-			LifeTime:    a.cfg.GetUint64(cfgBearerLifetime),
+			LifeTime:    lifetime,
 		},
 		Oauth:       make(map[string]*auth.ServiceOauth),
 		TLSEnabled:  a.cfg.GetString(cfgTLSCertificate) != "" || a.cfg.GetString(cfgTLSKey) != "",
-		Host:        a.cfg.GetString(cfgListenAddress),
+		Host:        listenAddress,
 		RedirectURL: a.cfg.GetString(cfgRedirectURL),
 	}
 

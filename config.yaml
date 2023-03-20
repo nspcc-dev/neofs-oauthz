@@ -16,12 +16,25 @@ oauth:
       auth: "https://github.com/login/oauth/authorize"
       token: "https://github.com/login/oauth/access_token"
 
-redirect:
-  url: "/"
-
 neofs:
   wallet:
     path: /path/to/wallet.json
     passphrase: '' # Passphrase to decrypt wallet. If you're using a wallet without a password, place '' here.
     address:  NfgHwwTi3wHAS8aFAN243C5vGbkYDpqLHP # Account address. If omitted default one will be used.
-    
+  cid: 2qAEwyRwV1sMmq8pc32mKCt1SRmTBXrzP9KbfMoHmqYM
+  owner_id: NfgHwwTi3wHAS8aFAN243C5vGbkYDpqLHP
+
+peers:
+  0:
+    address: s01.neofs.devenv:8080
+    priority: 1
+    weight: 1
+
+redirect:
+  url:  "/"
+
+listen_address: 0.0.0.0:8083
+
+connect_timeout: 30s
+request_timeout: 15s
+rebalance_timer: 15s
