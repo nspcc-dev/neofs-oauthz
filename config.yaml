@@ -17,10 +17,6 @@ oauth:
       token: "https://github.com/login/oauth/access_token"
 
 redirect:
-  # This URL base is used to prepare callback URL for authentication server.
-  # If omitted, then listen address is used. Should not contain scheme.
-  oauth: "my.website.com:8080"
-  # Redirect to this URL **after** successful authentication
   url: "/"
 
 neofs:
