@@ -12,8 +12,8 @@ import (
 	"github.com/nspcc-dev/neo-go/pkg/util"
 	"github.com/nspcc-dev/neo-go/pkg/wallet"
 	cid "github.com/nspcc-dev/neofs-sdk-go/container/id"
-	"github.com/nspcc-dev/neofs-sdk-go/owner"
 	"github.com/nspcc-dev/neofs-sdk-go/pool"
+	"github.com/nspcc-dev/neofs-sdk-go/user"
 	"github.com/nspcc-dev/neofs-send-authz/auth"
 	"github.com/nspcc-dev/neofs-send-authz/bearer"
 	"github.com/spf13/viper"
@@ -24,7 +24,7 @@ import (
 type (
 	app struct {
 		log       *zap.Logger
-		sdkPool   pool.Pool
+		sdkPool   *pool.Pool
 		authCfg   *auth.Config
 		cfg       *viper.Viper
 		webServer *http.Server
@@ -80,8 +80,21 @@ func newApp(ctx context.Context, opt ...Option) App {
 	}
 
 	a.initAuthCfg(key)
+	a.initPool(ctx, key)
 
-	pb := new(pool.Builder)
+	return a
+}
+
+func (a *app) initPool(ctx context.Context, key *keys.PrivateKey) {
+	var (
+		err error
+		p   pool.InitParameters
+	)
+	p.SetKey(&key.PrivateKey)
+	p.SetNodeDialTimeout(a.cfg.GetDuration(cfgConTimeout))
+	p.SetHealthcheckTimeout(a.cfg.GetDuration(cfgReqTimeout))
+	p.SetClientRebalanceInterval(a.cfg.GetDuration(cfgRebalance))
+
 	for i := 0; ; i++ {
 		address := a.cfg.GetString(cfgPeers + "." + strconv.Itoa(i) + ".address")
 		weight := a.cfg.GetFloat64(cfgPeers + "." + strconv.Itoa(i) + ".weight")
@@ -95,23 +108,18 @@ func newApp(ctx context.Context, opt ...Option) App {
 		if priority <= 0 { // unspecified or wrong
 			priority = 1
 		}
-		pb.AddNode(address, priority, weight)
+		p.AddNode(pool.NewNodeParam(priority, address, weight))
 		a.log.Info("add connection", zap.String("address", address), zap.Float64("weight", weight), zap.Int("priority", priority))
 	}
 
-	opts := &pool.BuilderOptions{
-		Key:                     &key.PrivateKey,
-		NodeConnectionTimeout:   a.cfg.GetDuration(cfgConTimeout),
-		NodeRequestTimeout:      a.cfg.GetDuration(cfgReqTimeout),
-		ClientRebalanceInterval: a.cfg.GetDuration(cfgRebalance),
-	}
-
-	a.sdkPool, err = pb.Build(ctx, opts)
+	a.sdkPool, err = pool.NewPool(p)
 	if err != nil {
 		a.log.Fatal("failed to create connection pool", zap.Error(err))
 	}
 
-	return a
+	if err = a.sdkPool.Dial(ctx); err != nil {
+		a.log.Fatal("failed to dial connection pool", zap.Error(err))
+	}
 }
 
 func (a *app) getKey() (*keys.PrivateKey, error) {
@@ -160,27 +168,14 @@ func (a *app) getKey() (*keys.PrivateKey, error) {
 }
 
 func (a *app) initAuthCfg(key *keys.PrivateKey) {
-	var err error
-	containerID := cid.New()
-	containerStr := a.cfg.GetString(cfgContainerID)
-	if len(containerStr) == 0 {
-		err = fmt.Errorf("no container id specified")
-	} else {
-		err = containerID.Parse(containerStr)
-	}
-	if err != nil {
-		a.log.Fatal("failed to get container id", zap.Error(err))
+	var containerID cid.ID
+	if err := containerID.DecodeString(a.cfg.GetString(cfgContainerID)); err != nil {
+		a.log.Fatal("container id is empty or malformed", zap.Error(err))
 	}
 
-	ownerID := new(owner.ID)
-	ownerStr := a.cfg.GetString(cfgOwnerID)
-	if len(ownerStr) == 0 {
-		err = fmt.Errorf("no owner id specified")
-	} else {
-		err = ownerID.Parse(ownerStr)
-	}
-	if err != nil {
-		a.log.Fatal("failed to get owner id", zap.Error(err))
+	var ownerID user.ID
+	if err := ownerID.DecodeString(a.cfg.GetString(cfgOwnerID)); err != nil {
+		a.log.Fatal("user id is empty or malformed", zap.Error(err))
 	}
 
 	a.authCfg = &auth.Config{

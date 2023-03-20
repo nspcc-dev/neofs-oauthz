@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/nspcc-dev/neofs-sdk-go/client"
 	"github.com/nspcc-dev/neofs-sdk-go/pool"
 	"github.com/nspcc-dev/neofs-send-authz/bearer"
 	"go.uber.org/zap"
@@ -20,7 +19,7 @@ var indexHTML string
 // Authenticator is an auth requests handler.
 type Authenticator struct {
 	log       *zap.Logger
-	sdkPool   pool.Pool
+	sdkPool   *pool.Pool
 	generator *bearer.Generator
 	config    *Config
 	services  *Services
@@ -36,7 +35,7 @@ type Config struct {
 }
 
 // New creates authenticator using config.
-func New(log *zap.Logger, sdkPool pool.Pool, config *Config) (*Authenticator, error) {
+func New(log *zap.Logger, sdkPool *pool.Pool, config *Config) (*Authenticator, error) {
 	return &Authenticator{
 		log:       log,
 		sdkPool:   sdkPool,
@@ -138,15 +137,10 @@ func (u *Authenticator) getUserInfo(ctx context.Context, state, code string) (st
 }
 
 func (u *Authenticator) getBearerToken(ctx context.Context, email string) (string, string, error) {
-	conn, _, err := u.sdkPool.Connection()
+	infoRes, err := u.sdkPool.NetworkInfo(ctx)
 	if err != nil {
 		return "", "", err
 	}
 
-	infoRes, err := conn.NetworkInfo(ctx, client.PrmNetworkInfo{})
-	if err != nil {
-		return "", "", err
-	}
-
-	return u.generator.NewBearer(email, infoRes.Info().CurrentEpoch())
+	return u.generator.NewBearer(email, infoRes.CurrentEpoch())
 }

@@ -2,17 +2,19 @@ package main
 
 import (
 	"context"
+	"fmt"
+	"os"
 	"os/signal"
 	"syscall"
-
-	"github.com/nspcc-dev/neofs-sdk-go/logger"
-	"github.com/spf13/viper"
-	"go.uber.org/zap"
 )
 
 func main() {
 	config := newConfig()
-	l := newLogger(config)
+	l, err := newLogger(config)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 
 	globalContext, _ := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 	app := newApp(globalContext, WithLogger(l), WithConfig(config))

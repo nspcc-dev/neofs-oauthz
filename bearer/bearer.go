@@ -6,11 +6,10 @@ import (
 	"fmt"
 
 	"github.com/nspcc-dev/neo-go/pkg/crypto/keys"
-	"github.com/nspcc-dev/neofs-api-go/v2/acl"
+	"github.com/nspcc-dev/neofs-sdk-go/bearer"
 	cid "github.com/nspcc-dev/neofs-sdk-go/container/id"
 	"github.com/nspcc-dev/neofs-sdk-go/eacl"
-	"github.com/nspcc-dev/neofs-sdk-go/owner"
-	"github.com/nspcc-dev/neofs-sdk-go/token"
+	"github.com/nspcc-dev/neofs-sdk-go/user"
 )
 
 // Generator is bearer token generator.
@@ -26,8 +25,8 @@ func NewGenerator(config *Config) *Generator {
 // Config for bearer token generator.
 type Config struct {
 	Key         *keys.PrivateKey
-	OwnerID     *owner.ID
-	ContainerID *cid.ID
+	OwnerID     user.ID
+	ContainerID cid.ID
 	LifeTime    uint64
 }
 
@@ -35,12 +34,7 @@ type Config struct {
 func (b *Generator) NewBearer(email string, currentEpoch uint64) (string, string, error) {
 	hashedEmail := fmt.Sprintf("%x", sha256.Sum256([]byte(email)))
 
-	bt := token.NewBearerToken()
-	bt.SetOwner(b.config.OwnerID)
-
-	t := new(eacl.Table)
-	t.SetCID(b.config.ContainerID)
-
+	t := eacl.CreateTable(b.config.ContainerID)
 	// order of rec is important
 	rec := eacl.CreateRecord(eacl.ActionAllow, eacl.OperationPut)
 	rec.AddObjectAttributeFilter(eacl.MatchStringEqual, "Email", hashedEmail)
@@ -50,20 +44,14 @@ func (b *Generator) NewBearer(email string, currentEpoch uint64) (string, string
 	eacl.AddFormedTarget(rec2, eacl.RoleOthers)
 	t.AddRecord(rec2)
 
-	bt.SetEACLTable(t)
+	var bt bearer.Token
+	bt.SetEACLTable(*t)
+	bt.ForUser(b.config.OwnerID)
+	bt.SetExp(currentEpoch + b.config.LifeTime)
 
-	lt := new(acl.TokenLifetime)
-	lt.SetExp(currentEpoch + b.config.LifeTime)
-	bt.SetLifetime(lt.GetExp(), lt.GetNbf(), lt.GetIat())
-
-	if err := bt.SignToken(&b.config.Key.PrivateKey); err != nil {
+	if err := bt.Sign(b.config.Key.PrivateKey); err != nil {
 		return "", "", err
 	}
 
-	raw, err := bt.Marshal()
-	if err != nil {
-		return "", "", err
-	}
-
-	return base64.StdEncoding.EncodeToString(raw), hashedEmail, nil
+	return base64.StdEncoding.EncodeToString(bt.Marshal()), hashedEmail, nil
 }
