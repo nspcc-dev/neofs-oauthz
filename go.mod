@@ -1,4 +1,4 @@
-module github.com/nspcc-dev/neofs-send-authz
+module github.com/nspcc-dev/neofs-oauthz
 
 go 1.18
 

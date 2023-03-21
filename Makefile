@@ -3,7 +3,7 @@
 REPO ?= $(shell go list -m)
 VERSION ?= $(shell git describe --tags --match "v*" --dirty --always)
 
-HUB_IMAGE ?= nspccdev/neofs-send-authz
+HUB_IMAGE ?= nspccdev/neofs-oauthz
 HUB_TAG ?= "$(shell echo ${VERSION} | sed 's/^v//')"
 
 # List of binaries to build. For now just one.
@@ -40,7 +40,7 @@ dep:
 	go mod tidy -v && echo OK
 
 image:
-	@echo "⇒ Build NeoFS Send Auth docker image "
+	@echo "⇒ Build NeoFS OAuthz docker image "
 	@docker build \
 		--build-arg REPO=$(REPO) \
 		--build-arg VERSION=$(VERSION) \

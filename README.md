@@ -1,5 +1,5 @@
-# neofs-send-authz
-neofs-send-authz is backend which allows to login to NeoFS network via Google or Github OAuth 2.0.  
+# neofs-oauthz
+neofs-oauthz is backend which allows to login to NeoFS network via Google or Github OAuth 2.0.  
 
 ## Installation
 1. To build the binary run the following command:
@@ -12,13 +12,13 @@ make image
 ```
 
 ## Execution
-neofs-send-authz must be run with `.yaml` config file:
+neofs-oauthz must be run with `.yaml` config file:
 ```
-$ ./neofs-send-authz -c config.yaml
+$ ./neofs-oauthz -c config.yaml
 ```
 or environment variables
 ```
-SEND_AUTHZ_CONFIG=config.yaml ./neofs-send-authz
+NEOFS_OAUTHZ_CONFIG=config.yaml ./neofs-oauthz
 ```
 
 ## Configuration

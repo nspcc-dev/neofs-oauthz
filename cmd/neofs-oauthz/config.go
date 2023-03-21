@@ -89,7 +89,7 @@ func newConfig() *viper.Viper {
 
 	switch {
 	case help != nil && *help:
-		fmt.Printf("NeoFS Send Authz %s\n", Version)
+		fmt.Printf("NeoFS OAuthz %s\n", Version)
 		flags.PrintDefaults()
 
 		fmt.Println()
@@ -109,7 +109,7 @@ func newConfig() *viper.Viper {
 
 		os.Exit(0)
 	case version != nil && *version:
-		fmt.Printf("NeoFS Send Authz %s\n", Version)
+		fmt.Printf("NeoFS OAuthz %s\n", Version)
 		os.Exit(0)
 	}
 

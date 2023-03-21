@@ -9,7 +9,7 @@ import (
 	"net/http"
 
 	"github.com/nspcc-dev/neofs-sdk-go/pool"
-	"github.com/nspcc-dev/neofs-send-authz/bearer"
+	"github.com/nspcc-dev/neofs-oauthz/bearer"
 	"go.uber.org/zap"
 )
 
