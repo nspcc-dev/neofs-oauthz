@@ -12,8 +12,8 @@ import (
 	"github.com/nspcc-dev/neo-go/pkg/util"
 	"github.com/nspcc-dev/neo-go/pkg/wallet"
 	cid "github.com/nspcc-dev/neofs-sdk-go/container/id"
-	"github.com/nspcc-dev/neofs-sdk-go/owner"
 	"github.com/nspcc-dev/neofs-sdk-go/pool"
+	"github.com/nspcc-dev/neofs-sdk-go/user"
 	"github.com/nspcc-dev/neofs-send-authz/auth"
 	"github.com/nspcc-dev/neofs-send-authz/bearer"
 	"github.com/spf13/viper"
@@ -24,7 +24,7 @@ import (
 type (
 	app struct {
 		log       *zap.Logger
-		sdkPool   pool.Pool
+		sdkPool   *pool.Pool
 		authCfg   *auth.Config
 		cfg       *viper.Viper
 		webServer *http.Server
@@ -80,14 +80,43 @@ func newApp(ctx context.Context, opt ...Option) App {
 	}
 
 	a.initAuthCfg(key)
+	a.initPool(ctx, key)
 
-	pb := new(pool.Builder)
+	return a
+}
+
+func (a *app) initPool(ctx context.Context, key *keys.PrivateKey) {
+	var (
+		err error
+		p   pool.InitParameters
+	)
+	p.SetKey(&key.PrivateKey)
+
+	connTimeout := a.cfg.GetDuration(cfgConTimeout)
+	if connTimeout <= 0 {
+		connTimeout = defaultConnectTimeout
+	}
+	p.SetNodeDialTimeout(connTimeout)
+
+	healthCheckTimeout := a.cfg.GetDuration(cfgReqTimeout)
+	if healthCheckTimeout <= 0 {
+		healthCheckTimeout = defaultRequestTimeout
+	}
+	p.SetHealthcheckTimeout(healthCheckTimeout)
+
+	rebalanceInterval := a.cfg.GetDuration(cfgRebalance)
+	if rebalanceInterval <= 0 {
+		rebalanceInterval = defaultRebalanceTimer
+	}
+	p.SetClientRebalanceInterval(rebalanceInterval)
+
 	for i := 0; ; i++ {
-		address := a.cfg.GetString(cfgPeers + "." + strconv.Itoa(i) + ".address")
-		weight := a.cfg.GetFloat64(cfgPeers + "." + strconv.Itoa(i) + ".weight")
-		priority := a.cfg.GetInt(cfgPeers + "." + strconv.Itoa(i) + ".priority")
+		key := cfgPeers + "." + strconv.Itoa(i) + "."
+		address := a.cfg.GetString(key + "address")
+		weight := a.cfg.GetFloat64(key + "weight")
+		priority := a.cfg.GetInt(key + "priority")
 		if address == "" {
-			break
+			a.log.Fatal("node address is empty or malformed")
 		}
 		if weight <= 0 { // unspecified or wrong
 			weight = 1
@@ -95,23 +124,18 @@ func newApp(ctx context.Context, opt ...Option) App {
 		if priority <= 0 { // unspecified or wrong
 			priority = 1
 		}
-		pb.AddNode(address, priority, weight)
+		p.AddNode(pool.NewNodeParam(priority, address, weight))
 		a.log.Info("add connection", zap.String("address", address), zap.Float64("weight", weight), zap.Int("priority", priority))
 	}
 
-	opts := &pool.BuilderOptions{
-		Key:                     &key.PrivateKey,
-		NodeConnectionTimeout:   a.cfg.GetDuration(cfgConTimeout),
-		NodeRequestTimeout:      a.cfg.GetDuration(cfgReqTimeout),
-		ClientRebalanceInterval: a.cfg.GetDuration(cfgRebalance),
-	}
-
-	a.sdkPool, err = pb.Build(ctx, opts)
+	a.sdkPool, err = pool.NewPool(p)
 	if err != nil {
 		a.log.Fatal("failed to create connection pool", zap.Error(err))
 	}
 
-	return a
+	if err = a.sdkPool.Dial(ctx); err != nil {
+		a.log.Fatal("failed to dial connection pool", zap.Error(err))
+	}
 }
 
 func (a *app) getKey() (*keys.PrivateKey, error) {
@@ -160,27 +184,24 @@ func (a *app) getKey() (*keys.PrivateKey, error) {
 }
 
 func (a *app) initAuthCfg(key *keys.PrivateKey) {
-	var err error
-	containerID := cid.New()
-	containerStr := a.cfg.GetString(cfgContainerID)
-	if len(containerStr) == 0 {
-		err = fmt.Errorf("no container id specified")
-	} else {
-		err = containerID.Parse(containerStr)
-	}
-	if err != nil {
-		a.log.Fatal("failed to get container id", zap.Error(err))
+	var containerID cid.ID
+	if err := containerID.DecodeString(a.cfg.GetString(cfgContainerID)); err != nil {
+		a.log.Fatal("container id is empty or malformed", zap.Error(err))
 	}
 
-	ownerID := new(owner.ID)
-	ownerStr := a.cfg.GetString(cfgOwnerID)
-	if len(ownerStr) == 0 {
-		err = fmt.Errorf("no owner id specified")
-	} else {
-		err = ownerID.Parse(ownerStr)
+	var ownerID user.ID
+	if err := ownerID.DecodeString(a.cfg.GetString(cfgOwnerID)); err != nil {
+		a.log.Fatal("user id is empty or malformed", zap.Error(err))
 	}
-	if err != nil {
-		a.log.Fatal("failed to get owner id", zap.Error(err))
+
+	lifetime := a.cfg.GetUint64(cfgBearerLifetime)
+	if lifetime == 0 {
+		lifetime = defaultBearerLifetime
+	}
+
+	listenAddress := a.cfg.GetString(cfgListenAddress)
+	if len(listenAddress) == 0 {
+		listenAddress = defaultListenAddress
 	}
 
 	a.authCfg = &auth.Config{
@@ -188,28 +209,19 @@ func (a *app) initAuthCfg(key *keys.PrivateKey) {
 			Key:         key,
 			OwnerID:     ownerID,
 			ContainerID: containerID,
-			LifeTime:    a.cfg.GetUint64(cfgBearerLifetime),
+			LifeTime:    lifetime,
 		},
-		Oauth:         make(map[string]*auth.ServiceOauth),
-		TLSEnabled:    a.cfg.GetString(cfgTLSCertificate) != "" || a.cfg.GetString(cfgTLSKey) != "",
-		Host:          a.cfg.GetString(cfgListenAddress),
-		RedirectURL:   a.cfg.GetString(cfgRedirectURL),
-		RedirectOauth: a.cfg.GetString(cfgRedirectOauth),
+		Oauth:       make(map[string]*auth.ServiceOauth),
+		TLSEnabled:  a.cfg.GetString(cfgTLSCertificate) != "" || a.cfg.GetString(cfgTLSKey) != "",
+		Host:        listenAddress,
+		RedirectURL: a.cfg.GetString(cfgRedirectURL),
 	}
 
-	scheme := "http"
-	if a.authCfg.TLSEnabled {
-		scheme += "s"
-	}
-	base := a.authCfg.Host
-	if len(a.authCfg.RedirectOauth) != 0 {
-		base = a.authCfg.RedirectOauth
-	}
-	redirectURL := fmt.Sprintf(callbackURLFmt, scheme, base)
+	redirectURLCallback := fmt.Sprintf(callbackURLFmt, a.authCfg.RedirectURL)
 
 	for key := range a.cfg.GetStringMap(cfgOauth) {
 		oauth := &oauth2.Config{
-			RedirectURL:  redirectURL,
+			RedirectURL:  redirectURLCallback,
 			ClientID:     a.cfg.GetString(fmt.Sprintf(cfgOauthIDFmt, key)),
 			ClientSecret: a.cfg.GetString(fmt.Sprintf(cfgOauthSecretFmt, key)),
 			Scopes:       a.cfg.GetStringSlice(fmt.Sprintf(cfgOauthScopesFmt, key)),

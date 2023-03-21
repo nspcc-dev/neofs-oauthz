@@ -1,57 +1,90 @@
 # neofs-send-authz
-send.fs.neo.org authentication backend
+neofs-send-authz is backend which allows to login to NeoFS network via Google or Github OAuth 2.0.  
 
-
-## Build
-To build binary run the following command:
+## Installation
+1. To build the binary run the following command:
 ```
 $ make
 ```
-
-### Configuration
-To successful connection to google, github and etc. oauth service fill **config.yaml** with your app credentials:
-
+2. To build the docker image
 ```
-oauth:
-  google:
-    id: "google id"
-    secret: "google secret"
-    scopes:
-      - "https://www.googleapis.com/auth/userinfo.email"
-    endpoint:
-      auth: "https://accounts.google.com/o/oauth2/auth"
-      token: "https://oauth2.googleapis.com/token"
-
-  github:
-    id: "github id"
-    secret: "github secret"
-    scopes:
-    endpoint:
-      auth: "https://github.com/login/oauth/authorize"
-      token: "https://github.com/login/oauth/access_token"
+make image
 ```
-Also, to configure NeoFS credentials, add to **config.yaml** the following section:
-```yaml
+
+## Execution
+neofs-send-authz must be run with `.yaml` config file:
+```
+$ ./neofs-send-authz -c config.yaml
+```
+or environment variables
+```
+SEND_AUTHZ_CONFIG=config.yaml ./neofs-send-authz
+```
+
+## Configuration
+Example of the configuration file: [config/config.yaml](/config/config.yaml)
+
+Now the app supports authentication via `github` and `google` services.
+
+### General section
+```
+redirect:
+  url:  "/"
+
+listen_address: 0.0.0.0:8083
+
+logger:
+    level: debug
+
+connect_timeout: 30s
+request_timeout: 15s
+rebalance_timer: 15s
+```
+| Parameter         | Type       | Default value | Description                                                                                        |
+|-------------------|------------|---------------|----------------------------------------------------------------------------------------------------|
+| `redirect.url`    | `string`   |               | URL to redirect users going through the OAuth flow                                                 |
+| `listen_address`  | `string`   |               | The address that the app is listening on.                                                          |
+| `logger.level`    | `string`   | `debug`       | Logging level.<br/>Possible values:  `debug`, `info`, `warn`, `error`, `dpanic`, `panic`, `fatal`. |
+| `connect_timeout` | `duration` | `30s`         | Timeout to connect to a node.                                                                      |
+| `request_timeout` | `duration` | `15s`         | Timeout to check node health during rebalance.                                                     |
+| `rebalance_timer` | `duration` | `15s`         | Interval to check node health.                                                                     |
+
+### NeoFS section
+```
 neofs:
   wallet:
     path: /path/to/wallet.json
-    passphrase: '' # Passphrase to decrypt wallet. If you're using a wallet without a password, place '' here.
     address:  NfgHwwTi3wHAS8aFAN243C5vGbkYDpqLHP # Account address. If omitted default one will be used.
+    passphrase: '' # Passphrase to decrypt wallet. If you're using a wallet without a password, place '' here.
+  cid: 2qAEwyRwV1sMmq8pc32mKCt1SRmTBXrzP9KbfMoHmqYM
+  owner_id: NfgHwwTi3wHAS8aFAN243C5vGbkYDpqLHP
 ```
+| Parameter                 | Type     | Default value | Description                                                              |
+|---------------------------|----------|---------------|--------------------------------------------------------------------------|
+| `neofs.wallet.path`       | `string` |               | Path to the wallet.                                                      |
+| `neofs.wallet.address`    | `string` |               | Account address to get from wallet. If omitted default one will be used. |
+| `neofs.wallet.passphrase` | `string` |               | Passphrase to decrypt wallet.                                            |
+| `neofs.cid`               | `string` |               | container ID in NeoFS where objects will be stored                       |
+| `neofs.owner_id`          | `string` |               | user ID which will be used to manage objects in a NeoFS container        |
 
-### Run
-After build you can run the app (**note:** config.yaml must be in the directory where the application is going to be launched.
-In the following example it must be **"./config.yaml"**):
-
+### NeoFS nodes section
 ```
-./bin/neofs-send-authz -p s01.neofs.devenv:8080 --owner_id NQydaT4iTL9rCuUbRL5GZ2phCopxX9yJYY --cid 2Z4mjBwgm1wVoFDeMDvWMgLqqLrVhgSm5RtDG6uAo7Jj --listen_address localhost:8083 
+peers:
+  0:
+    address: node1.neofs:8080
+    priority: 1
+    weight: 1
+  1:
+    address: node2.neofs:8080
+    priority: 2
+    weight: 0.1
+  2:
+    address: node3.neofs:8080
+    priority: 2
+    weight: 0.9
 ```
-
-Arguments:
-
-```
--p s01.neofs.devenv:8080 // neofs node connection endpoint to get current epoch
---cid 2Z4mjBwgm1wVoFDeMDvWMgLqqLrVhgSm5RtDG6uAo7Jj // container id (used to fill correspond field in the bearer token)
---owner_id NQydaT4iTL9rCuUbRL5GZ2phCopxX9yJYY // owner token id (used to fill correspond field in the bearer token)
---listen_address localhost:8083 // address to start server
-```
+| Parameter  | Type     | Default value | Description                                                                                                                                             |
+|------------|----------|---------------|---------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `address`  | `string` |               | Address of storage node.                                                                                                                                |
+| `priority` | `int`    | `1`           | It allows to group nodes and don't switch group until all nodes with the same priority will be unhealthy. The lower the value, the higher the priority. |
+| `weight`   | `float`  | `1`           | Weight of node in the group with the same priority. Distribute requests to nodes proportionally to these values.                                        |

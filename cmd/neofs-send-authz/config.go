@@ -4,34 +4,31 @@ import (
 	"fmt"
 	"os"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
+	"go.uber.org/zap"
 )
 
 const (
 	defaultRebalanceTimer = 15 * time.Second
 	defaultRequestTimeout = 15 * time.Second
 	defaultConnectTimeout = 30 * time.Second
+	defaultBearerLifetime = 30
+
+	defaultListenAddress = "0.0.0.0:8083"
 
 	// Logger.
-	cfgLoggerLevel              = "logger.level"
-	cfgLoggerFormat             = "logger.format"
-	cfgLoggerTraceLevel         = "logger.trace_level"
-	cfgLoggerNoCaller           = "logger.no_caller"
-	cfgLoggerNoDisclaimer       = "logger.no_disclaimer"
-	cfgLoggerSamplingInitial    = "logger.sampling.initial"
-	cfgLoggerSamplingThereafter = "logger.sampling.thereafter"
+	cfgLoggerLevel    = "logger.level"
+	cfgListenAddress  = "listen_address"
+	cfgTLSCertificate = "tls_certificate"
+	cfgTLSKey         = "tls_key"
 
-	cfgListenAddress         = "listen_address"
-	cfgTLSCertificate        = "tls_certificate"
-	cfgTLSKey                = "tls_key"
-	cfgContainerID           = "cid"
-	cfgOwnerID               = "owner_id"
-	cfgBearerLifetime        = "bearer_lifetime"
+	cfgContainerID           = "neofs.cid"
+	cfgOwnerID               = "neofs.owner_id"
+	cfgBearerLifetime        = "neofs.bearer_lifetime"
 	cfgNeoFSWalletPath       = "neofs.wallet.path"
 	cfgNeoFSWalletPassphrase = "neofs.wallet.passphrase"
 	cfgNeoFSWalletAddress    = "neofs.wallet.address"
@@ -42,13 +39,10 @@ const (
 	cfgReqTimeout = "request_timeout"
 	cfgRebalance  = "rebalance_timer"
 
-	// Application.
-	cfgApplicationName    = "app.name"
-	cfgApplicationVersion = "app.version"
-
 	// Command line args.
 	cmdHelp    = "help"
 	cmdVersion = "version"
+	cmdConfig  = "config"
 )
 
 const (
@@ -59,16 +53,12 @@ const (
 	cfgOauthEndpointAuthFmt  = "oauth.%s.endpoint.auth"
 	cfgOauthEndpointTokenFmt = "oauth.%s.endpoint.token"
 	cfgRedirectURL           = "redirect.url"
-	cfgRedirectOauth         = "redirect.oauth"
-	callbackURLFmt           = "%s://%s/callback"
+	callbackURLFmt           = "%scallback"
 )
 
 var ignore = map[string]struct{}{
-	cfgApplicationName:    {},
-	cfgApplicationVersion: {},
-	cfgPeers:              {},
-	cmdHelp:               {},
-	cmdVersion:            {},
+	cmdHelp:    {},
+	cmdVersion: {},
 }
 
 func newConfig() *viper.Viper {
@@ -77,53 +67,23 @@ func newConfig() *viper.Viper {
 	v.AutomaticEnv()
 	v.SetEnvPrefix(Prefix)
 	v.SetConfigType("yaml")
-	v.AddConfigPath("./")
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	v.AllowEmptyEnv(true)
 
-	// flags setup:
-	flags := pflag.NewFlagSet("commandline", pflag.ExitOnError)
+	flags := pflag.NewFlagSet("flagSet", pflag.ExitOnError)
 	flags.SetOutput(os.Stdout)
 	flags.SortFlags = false
 
+	// set cmd flags
 	help := flags.BoolP(cmdHelp, "h", false, "show help")
 	version := flags.BoolP(cmdVersion, "v", false, "show version")
-
-	flags.String(cfgContainerID, "", `container id`)
-	flags.String(cfgOwnerID, "", `token owner`)
-
-	// set prefers:
-	v.Set(cfgApplicationName, "neofs-send-authz")
-	v.Set(cfgApplicationVersion, Version)
-
-	// set defaults:
-	flags.Duration(cfgConTimeout, defaultConnectTimeout, "gRPC connect timeout")
-	flags.Duration(cfgReqTimeout, defaultRequestTimeout, "gRPC request timeout")
-	flags.Duration(cfgRebalance, defaultRebalanceTimer, "gRPC connection rebalance timer")
-	flags.String(cfgListenAddress, "0.0.0.0:8083", "address to listen")
-	flags.String(cfgTLSCertificate, "", "TLS certificate path")
-	flags.String(cfgTLSKey, "", "TLS key path")
-	flags.Uint64(cfgBearerLifetime, 30, "bearer lifetime in epoch")
-
-	peers := flags.StringArrayP(cfgPeers, "p", nil, "NeoFS nodes")
-
-	// logger:
-	v.SetDefault(cfgLoggerLevel, "debug")
-	v.SetDefault(cfgLoggerFormat, "console")
-	v.SetDefault(cfgLoggerTraceLevel, "panic")
-	v.SetDefault(cfgLoggerNoCaller, false)
-	v.SetDefault(cfgLoggerNoDisclaimer, true)
-	v.SetDefault(cfgLoggerSamplingInitial, 1000)
-	v.SetDefault(cfgLoggerSamplingThereafter, 1000)
-
-	if err := v.BindPFlags(flags); err != nil {
-		panic(err)
-	}
-
-	if err := v.ReadInConfig(); err != nil {
-		panic(err)
-	}
+	flags.StringP(cmdConfig, "c", "", "set config path")
 
 	if err := flags.Parse(os.Args); err != nil {
+		panic(err)
+	}
+
+	if err := v.BindPFlags(flags); err != nil {
 		panic(err)
 	}
 
@@ -153,13 +113,41 @@ func newConfig() *viper.Viper {
 		os.Exit(0)
 	}
 
-	if peers != nil && len(*peers) > 0 {
-		for i := range *peers {
-			v.SetDefault(cfgPeers+"."+strconv.Itoa(i)+".address", (*peers)[i])
-			v.SetDefault(cfgPeers+"."+strconv.Itoa(i)+".weight", 1)
-			v.SetDefault(cfgPeers+"."+strconv.Itoa(i)+".priority", 1)
+	if !v.IsSet(cmdConfig) {
+		fmt.Println("config path is mandatory")
+		os.Exit(1)
+	} else {
+		if err := readConfig(v); err != nil {
+			panic(err)
 		}
 	}
 
 	return v
+}
+
+func newLogger(v *viper.Viper) (*zap.Logger, error) {
+	var err error
+	// default log level is debug
+	c := zap.NewDevelopmentConfig()
+	if v.IsSet(cfgLoggerLevel) {
+		c.Level, err = zap.ParseAtomicLevel(v.GetString(cfgLoggerLevel))
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return c.Build()
+}
+
+func readConfig(v *viper.Viper) error {
+	cfgFileName := v.GetString(cmdConfig)
+	cfgFile, err := os.Open(cfgFileName)
+	if err != nil {
+		return err
+	}
+	if err = v.ReadConfig(cfgFile); err != nil {
+		return err
+	}
+
+	return cfgFile.Close()
 }

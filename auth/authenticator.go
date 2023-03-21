@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/nspcc-dev/neofs-sdk-go/client"
 	"github.com/nspcc-dev/neofs-sdk-go/pool"
 	"github.com/nspcc-dev/neofs-send-authz/bearer"
 	"go.uber.org/zap"
@@ -20,7 +19,7 @@ var indexHTML string
 // Authenticator is an auth requests handler.
 type Authenticator struct {
 	log       *zap.Logger
-	sdkPool   pool.Pool
+	sdkPool   *pool.Pool
 	generator *bearer.Generator
 	config    *Config
 	services  *Services
@@ -28,16 +27,15 @@ type Authenticator struct {
 
 // Config for authenticator handler.
 type Config struct {
-	Bearer        *bearer.Config
-	Oauth         map[string]*ServiceOauth
-	TLSEnabled    bool
-	Host          string
-	RedirectURL   string
-	RedirectOauth string
+	Bearer      *bearer.Config
+	Oauth       map[string]*ServiceOauth
+	TLSEnabled  bool
+	Host        string
+	RedirectURL string
 }
 
 // New creates authenticator using config.
-func New(log *zap.Logger, sdkPool pool.Pool, config *Config) (*Authenticator, error) {
+func New(log *zap.Logger, sdkPool *pool.Pool, config *Config) (*Authenticator, error) {
 	return &Authenticator{
 		log:       log,
 		sdkPool:   sdkPool,
@@ -51,6 +49,7 @@ func New(log *zap.Logger, sdkPool pool.Pool, config *Config) (*Authenticator, er
 func (u *Authenticator) Index(w http.ResponseWriter, _ *http.Request) {
 	_, err := fmt.Fprint(w, indexHTML)
 	if err != nil {
+		u.log.Error("couldn't write to w indexHTML", zap.Error(err))
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -60,20 +59,26 @@ func (u *Authenticator) LogInWith(w http.ResponseWriter, r *http.Request) {
 	keys, ok := r.URL.Query()["service"]
 
 	if !ok || len(keys[0]) < 1 {
-		http.Error(w, "no valid service param", http.StatusBadRequest)
+		msg := "no valid service param"
+		u.log.Error(msg)
+		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
 
 	serviceName := keys[0]
 	config, ok := u.services.Oauth(serviceName)
 	if !ok {
-		http.Error(w, "unsupported service", http.StatusBadRequest)
+		msg := "unsupported service"
+		u.log.Error(msg)
+		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
 
 	b := make([]byte, 8)
 	if _, err := rand.Read(b); err != nil {
-		http.Error(w, "unable generate state", http.StatusInternalServerError)
+		msg := "unable to generate state"
+		u.log.Error(msg, zap.Error(err))
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 
@@ -94,6 +99,7 @@ func (u *Authenticator) Callback(w http.ResponseWriter, r *http.Request) {
 
 	strToken, hashedEmail, err := u.getBearerToken(r.Context(), email)
 	if err != nil {
+		u.log.Error("getting bearer token failed", zap.Error(err))
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -139,15 +145,10 @@ func (u *Authenticator) getUserInfo(ctx context.Context, state, code string) (st
 }
 
 func (u *Authenticator) getBearerToken(ctx context.Context, email string) (string, string, error) {
-	conn, _, err := u.sdkPool.Connection()
+	infoRes, err := u.sdkPool.NetworkInfo(ctx)
 	if err != nil {
 		return "", "", err
 	}
 
-	infoRes, err := conn.NetworkInfo(ctx, client.PrmNetworkInfo{})
-	if err != nil {
-		return "", "", err
-	}
-
-	return u.generator.NewBearer(email, infoRes.Info().CurrentEpoch())
+	return u.generator.NewBearer(email, infoRes.CurrentEpoch())
 }
