@@ -111,7 +111,11 @@ func (a *app) initPool(ctx context.Context, key *keys.PrivateKey) {
 	p.SetClientRebalanceInterval(rebalanceInterval)
 
 	for i := 0; ; i++ {
-		key := cfgPeers + "." + strconv.Itoa(i) + "."
+		key := cfgPeers + "." + strconv.Itoa(i)
+		if !a.cfg.IsSet(key) {
+			break
+		}
+		key += "."
 		address := a.cfg.GetString(key + "address")
 		weight := a.cfg.GetFloat64(key + "weight")
 		priority := a.cfg.GetInt(key + "priority")
