@@ -31,7 +31,7 @@ peers:
     weight: 1
 
 redirect:
-  url:  "/"
+  url:  "https://website.example.com/"
 
 listen_address: 0.0.0.0:8083
 
