@@ -18,6 +18,6 @@ FROM alpine
 WORKDIR /
 
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
-COPY --from=builder /src/bin/neofs-send-authz /bin/neofs-send-authz
+COPY --from=builder /src/bin/neofs-oauthz /bin/neofs-oauthz
 
-ENTRYPOINT ["/bin/neofs-send-authz"]
+ENTRYPOINT ["/bin/neofs-oauthz"]
