@@ -14,6 +14,7 @@ import (
 	"github.com/nspcc-dev/neofs-oauthz/auth"
 	"github.com/nspcc-dev/neofs-oauthz/bearer"
 	cid "github.com/nspcc-dev/neofs-sdk-go/container/id"
+	neofsecdsa "github.com/nspcc-dev/neofs-sdk-go/crypto/ecdsa"
 	"github.com/nspcc-dev/neofs-sdk-go/pool"
 	"github.com/nspcc-dev/neofs-sdk-go/user"
 	"github.com/spf13/viper"
@@ -90,7 +91,7 @@ func (a *app) initPool(ctx context.Context, key *keys.PrivateKey) {
 		err error
 		p   pool.InitParameters
 	)
-	p.SetKey(&key.PrivateKey)
+	p.SetSigner(neofsecdsa.Signer(key.PrivateKey))
 
 	connTimeout := a.cfg.GetDuration(cfgConTimeout)
 	if connTimeout <= 0 {
