@@ -8,6 +8,7 @@ import (
 	"github.com/nspcc-dev/neo-go/pkg/crypto/keys"
 	"github.com/nspcc-dev/neofs-sdk-go/bearer"
 	cid "github.com/nspcc-dev/neofs-sdk-go/container/id"
+	neofsecdsa "github.com/nspcc-dev/neofs-sdk-go/crypto/ecdsa"
 	"github.com/nspcc-dev/neofs-sdk-go/eacl"
 	"github.com/nspcc-dev/neofs-sdk-go/user"
 )
@@ -49,7 +50,7 @@ func (b *Generator) NewBearer(email string, currentEpoch uint64) (string, string
 	bt.ForUser(b.config.OwnerID)
 	bt.SetExp(currentEpoch + b.config.LifeTime)
 
-	if err := bt.Sign(b.config.Key.PrivateKey); err != nil {
+	if err := bt.Sign(neofsecdsa.Signer(b.config.Key.PrivateKey)); err != nil {
 		return "", "", err
 	}
 
