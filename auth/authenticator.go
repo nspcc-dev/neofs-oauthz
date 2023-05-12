@@ -104,8 +104,6 @@ func (u *Authenticator) Callback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Authorization", "Bearer "+strToken)
-
 	http.SetCookie(w, &http.Cookie{
 		Name:   "Bearer",
 		Value:  strToken,
