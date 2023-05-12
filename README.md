@@ -47,6 +47,7 @@ rebalance_timer: 15s
 ```
 | Parameter         | Type       | Default value | Description                                                                                        |
 |-------------------|------------|---------------|----------------------------------------------------------------------------------------------------|
+| `bearer_cookie_name`| `string` | `Bearer`      | The name of the cookie holding bearer token.                                                       |
 | `redirect.url`    | `string`   |               | URL to redirect users going through the OAuth flow                                                 |
 | `listen_address`  | `string`   |               | The address that the app is listening on.                                                          |
 | `logger.level`    | `string`   | `debug`       | Logging level.<br/>Possible values:  `debug`, `info`, `warn`, `error`, `dpanic`, `panic`, `fatal`. |

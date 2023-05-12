@@ -13,10 +13,11 @@ import (
 )
 
 const (
-	defaultRebalanceTimer = 15 * time.Second
-	defaultRequestTimeout = 15 * time.Second
-	defaultConnectTimeout = 30 * time.Second
-	defaultBearerLifetime = 30
+	defaultBearerCookieName = "Bearer"
+	defaultBearerLifetime   = 30
+	defaultConnectTimeout   = 30 * time.Second
+	defaultRebalanceTimer   = 15 * time.Second
+	defaultRequestTimeout   = 15 * time.Second
 
 	defaultListenAddress = "0.0.0.0:8083"
 
@@ -43,9 +44,8 @@ const (
 	cmdHelp    = "help"
 	cmdVersion = "version"
 	cmdConfig  = "config"
-)
 
-const (
+	cfgBearerCookieName      = "bearer_cookie_name"
 	cfgOauth                 = "oauth"
 	cfgOauthIDFmt            = "oauth.%s.id"
 	cfgOauthSecretFmt        = "oauth.%s.secret"

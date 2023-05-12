@@ -38,6 +38,8 @@ listen_address: 0.0.0.0:8083
 logger:
   level: debug
 
+bearer_cookie_name: "Bearer"
+
 connect_timeout: 30s
 request_timeout: 15s
 rebalance_timer: 15s
