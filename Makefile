@@ -48,6 +48,11 @@ image:
 		-f Dockerfile \
 		-t $(HUB_IMAGE):$(HUB_TAG) .
 
+gh-docker-vars:
+	@echo "file=Dockerfile"
+	@echo "version=$(HUB_TAG)"
+	@echo "repo=$(HUB_IMAGE)"
+
 # Run tests
 test:
 	@go test ./... -cover
