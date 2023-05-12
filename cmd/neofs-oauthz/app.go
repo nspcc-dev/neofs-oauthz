@@ -208,6 +208,10 @@ func (a *app) initAuthCfg(key *keys.PrivateKey) {
 	if len(listenAddress) == 0 {
 		listenAddress = defaultListenAddress
 	}
+	bearerCookieName := a.cfg.GetString(cfgBearerCookieName)
+	if len(bearerCookieName) == 0 {
+		bearerCookieName = defaultBearerCookieName
+	}
 
 	a.authCfg = &auth.Config{
 		Bearer: &bearer.Config{
@@ -216,10 +220,11 @@ func (a *app) initAuthCfg(key *keys.PrivateKey) {
 			ContainerID: containerID,
 			LifeTime:    lifetime,
 		},
-		Oauth:       make(map[string]*auth.ServiceOauth),
-		TLSEnabled:  a.cfg.GetString(cfgTLSCertificate) != "" || a.cfg.GetString(cfgTLSKey) != "",
-		Host:        listenAddress,
-		RedirectURL: a.cfg.GetString(cfgRedirectURL),
+		BearerCookieName: bearerCookieName,
+		Oauth:            make(map[string]*auth.ServiceOauth),
+		TLSEnabled:       a.cfg.GetString(cfgTLSCertificate) != "" || a.cfg.GetString(cfgTLSKey) != "",
+		Host:             listenAddress,
+		RedirectURL:      a.cfg.GetString(cfgRedirectURL),
 	}
 
 	redirectURLCallback := fmt.Sprintf(callbackURLFmt, a.authCfg.RedirectURL)

@@ -27,11 +27,12 @@ type Authenticator struct {
 
 // Config for authenticator handler.
 type Config struct {
-	Bearer      *bearer.Config
-	Oauth       map[string]*ServiceOauth
-	TLSEnabled  bool
-	Host        string
-	RedirectURL string
+	Bearer           *bearer.Config
+	BearerCookieName string
+	Oauth            map[string]*ServiceOauth
+	TLSEnabled       bool
+	Host             string
+	RedirectURL      string
 }
 
 // New creates authenticator using config.
@@ -105,7 +106,7 @@ func (u *Authenticator) Callback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.SetCookie(w, &http.Cookie{
-		Name:   "Bearer",
+		Name:   u.config.BearerCookieName,
 		Value:  strToken,
 		MaxAge: 600,
 	})
