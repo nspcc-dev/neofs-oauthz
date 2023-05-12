@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -275,7 +276,7 @@ func (a *app) Serve(ctx context.Context) {
 		a.log.Info("running web server", zap.String("address", a.webServer.Addr))
 		err = a.webServer.ListenAndServe()
 	}
-	if err != nil {
+	if !errors.Is(err, http.ErrServerClosed) {
 		a.log.Fatal("could not start server", zap.Error(err))
 	}
 }
