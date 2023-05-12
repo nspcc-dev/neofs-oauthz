@@ -116,10 +116,9 @@ func newConfig() *viper.Viper {
 	if !v.IsSet(cmdConfig) {
 		fmt.Println("config path is mandatory")
 		os.Exit(1)
-	} else {
-		if err := readConfig(v); err != nil {
-			panic(err)
-		}
+	}
+	if err := readConfig(v); err != nil {
+		panic(err)
 	}
 
 	return v

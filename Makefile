@@ -50,8 +50,8 @@ image:
 
 gh-docker-vars:
 	@echo "file=Dockerfile"
-	@echo "version=$(VERSION)"
-	@echo "repo=$(HUB_REPO)"
+	@echo "version=$(HUB_TAG)"
+	@echo "repo=$(HUB_IMAGE)"
 
 # Run tests
 test:
