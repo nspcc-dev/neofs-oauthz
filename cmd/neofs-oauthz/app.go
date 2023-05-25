@@ -195,9 +195,15 @@ func (a *app) initAuthCfg(key *keys.PrivateKey) {
 		a.log.Fatal("container id is empty or malformed", zap.Error(err))
 	}
 
-	var ownerID user.ID
-	if err := ownerID.DecodeString(a.cfg.GetString(cfgOwnerID)); err != nil {
-		a.log.Fatal("user id is empty or malformed", zap.Error(err))
+	var (
+		cfgUser = a.cfg.GetString(cfgUserID)
+		userID  *user.ID
+	)
+	if cfgUser != "" {
+		userID = new(user.ID)
+		if err := userID.DecodeString(cfgUser); err != nil {
+			a.log.Fatal("user id is malformed", zap.Error(err))
+		}
 	}
 
 	lifetime := a.cfg.GetUint64(cfgBearerLifetime)
@@ -217,7 +223,7 @@ func (a *app) initAuthCfg(key *keys.PrivateKey) {
 	a.authCfg = &auth.Config{
 		Bearer: &bearer.Config{
 			Key:         key,
-			OwnerID:     ownerID,
+			UserID:      userID,
 			ContainerID: containerID,
 			LifeTime:    lifetime,
 		},

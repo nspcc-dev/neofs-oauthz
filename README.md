@@ -63,7 +63,7 @@ neofs:
     address:  NfgHwwTi3wHAS8aFAN243C5vGbkYDpqLHP # Account address. If omitted default one will be used.
     passphrase: '' # Passphrase to decrypt wallet. If you're using a wallet without a password, place '' here.
   cid: 2qAEwyRwV1sMmq8pc32mKCt1SRmTBXrzP9KbfMoHmqYM
-  owner_id: NfgHwwTi3wHAS8aFAN243C5vGbkYDpqLHP
+  bearer_user_id: NUVPACMnKFhpuHjsRjhUvXz1XhqfGZYVtY
 ```
 | Parameter                 | Type     | Default value | Description                                                              |
 |---------------------------|----------|---------------|--------------------------------------------------------------------------|
@@ -71,7 +71,7 @@ neofs:
 | `neofs.wallet.address`    | `string` |               | Account address to get from wallet. If omitted default one will be used. |
 | `neofs.wallet.passphrase` | `string` |               | Passphrase to decrypt wallet.                                            |
 | `neofs.cid`               | `string` |               | container ID in NeoFS where objects will be stored                       |
-| `neofs.owner_id`          | `string` |               | user ID which will be used to manage objects in a NeoFS container        |
+| `neofs.bearer_user_id`    | `string` |               | User ID that will be given the right to upload objects into NeoFS container (can be omitted to allow this for any owner of the token) |
 
 ### NeoFS nodes section
 ```
