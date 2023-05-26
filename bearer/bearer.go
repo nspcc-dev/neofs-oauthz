@@ -26,7 +26,7 @@ func NewGenerator(config *Config) *Generator {
 // Config for bearer token generator.
 type Config struct {
 	Key         *keys.PrivateKey
-	OwnerID     user.ID
+	UserID      *user.ID
 	ContainerID cid.ID
 	LifeTime    uint64
 }
@@ -47,7 +47,9 @@ func (b *Generator) NewBearer(email string, currentEpoch uint64) (string, string
 
 	var bt bearer.Token
 	bt.SetEACLTable(*t)
-	bt.ForUser(b.config.OwnerID)
+	if b.config.UserID != nil {
+		bt.ForUser(*b.config.UserID)
+	}
 	bt.SetExp(currentEpoch + b.config.LifeTime)
 
 	if err := bt.Sign(neofsecdsa.Signer(b.config.Key.PrivateKey)); err != nil {

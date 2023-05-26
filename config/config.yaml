@@ -17,12 +17,12 @@ oauth:
       token: "https://github.com/login/oauth/access_token"
 
 neofs:
+  bearer_user_id: NUVPACMnKFhpuHjsRjhUvXz1XhqfGZYVtY # If set, limits bearer token issued to the specified user ID.
   wallet:
     path: /path/to/wallet.json
     passphrase: '' # Passphrase to decrypt wallet. If you're using a wallet without a password, place '' here.
     address:  NfgHwwTi3wHAS8aFAN243C5vGbkYDpqLHP # Account address. If omitted default one will be used.
   cid: 2qAEwyRwV1sMmq8pc32mKCt1SRmTBXrzP9KbfMoHmqYM
-  owner_id: NfgHwwTi3wHAS8aFAN243C5vGbkYDpqLHP
 
 peers:
   0:

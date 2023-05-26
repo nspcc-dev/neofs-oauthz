@@ -28,7 +28,7 @@ const (
 	cfgTLSKey         = "tls_key"
 
 	cfgContainerID           = "neofs.cid"
-	cfgOwnerID               = "neofs.owner_id"
+	cfgUserID                = "neofs.bearer_user_id"
 	cfgBearerLifetime        = "neofs.bearer_lifetime"
 	cfgNeoFSWalletPath       = "neofs.wallet.path"
 	cfgNeoFSWalletPassphrase = "neofs.wallet.passphrase"
