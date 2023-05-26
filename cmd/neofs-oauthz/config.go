@@ -13,6 +13,7 @@ import (
 )
 
 const (
+	defaultEmailAttr        = "Email"
 	defaultBearerCookieName = "Bearer"
 	defaultBearerLifetime   = 30
 	defaultConnectTimeout   = 30 * time.Second
@@ -28,6 +29,7 @@ const (
 	cfgTLSKey         = "tls_key"
 
 	cfgContainerID           = "neofs.cid"
+	cfgEmailAttr             = "neofs.bearer_email_attribute"
 	cfgUserID                = "neofs.bearer_user_id"
 	cfgBearerLifetime        = "neofs.bearer_lifetime"
 	cfgNeoFSWalletPath       = "neofs.wallet.path"

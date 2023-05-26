@@ -206,6 +206,10 @@ func (a *app) initAuthCfg(key *keys.PrivateKey) {
 		}
 	}
 
+	emailattr := a.cfg.GetString(cfgEmailAttr)
+	if len(emailattr) == 0 {
+		emailattr = defaultEmailAttr
+	}
 	lifetime := a.cfg.GetUint64(cfgBearerLifetime)
 	if lifetime == 0 {
 		lifetime = defaultBearerLifetime
@@ -222,6 +226,7 @@ func (a *app) initAuthCfg(key *keys.PrivateKey) {
 
 	a.authCfg = &auth.Config{
 		Bearer: &bearer.Config{
+			EmailAttr:   emailattr,
 			Key:         key,
 			UserID:      userID,
 			ContainerID: containerID,

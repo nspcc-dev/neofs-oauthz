@@ -64,6 +64,7 @@ neofs:
     passphrase: '' # Passphrase to decrypt wallet. If you're using a wallet without a password, place '' here.
   cid: 2qAEwyRwV1sMmq8pc32mKCt1SRmTBXrzP9KbfMoHmqYM
   bearer_user_id: NUVPACMnKFhpuHjsRjhUvXz1XhqfGZYVtY
+  bearer_email_attribute: email
 ```
 | Parameter                 | Type     | Default value | Description                                                              |
 |---------------------------|----------|---------------|--------------------------------------------------------------------------|
@@ -72,6 +73,7 @@ neofs:
 | `neofs.wallet.passphrase` | `string` |               | Passphrase to decrypt wallet.                                            |
 | `neofs.cid`               | `string` |               | container ID in NeoFS where objects will be stored                       |
 | `neofs.bearer_user_id`    | `string` |               | User ID that will be given the right to upload objects into NeoFS container (can be omitted to allow this for any owner of the token) |
+| `neofs.bearer_email_attribute`| `string`| `Email`    | The name of the NeoFS attribute used as to match user by his e-mail address (case sensitive as all NeoFS attributes) |
 
 ### NeoFS nodes section
 ```

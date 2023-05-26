@@ -25,6 +25,7 @@ func NewGenerator(config *Config) *Generator {
 
 // Config for bearer token generator.
 type Config struct {
+	EmailAttr   string
 	Key         *keys.PrivateKey
 	UserID      *user.ID
 	ContainerID cid.ID
@@ -38,7 +39,7 @@ func (b *Generator) NewBearer(email string, currentEpoch uint64) (string, string
 	t := eacl.CreateTable(b.config.ContainerID)
 	// order of rec is important
 	rec := eacl.CreateRecord(eacl.ActionAllow, eacl.OperationPut)
-	rec.AddObjectAttributeFilter(eacl.MatchStringEqual, "Email", hashedEmail)
+	rec.AddObjectAttributeFilter(eacl.MatchStringEqual, b.config.EmailAttr, hashedEmail)
 	eacl.AddFormedTarget(rec, eacl.RoleOthers)
 	t.AddRecord(rec)
 	rec2 := eacl.CreateRecord(eacl.ActionDeny, eacl.OperationPut)
