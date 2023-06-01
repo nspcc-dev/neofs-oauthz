@@ -53,7 +53,7 @@ func (b *Generator) NewBearer(email string, currentEpoch uint64) (string, string
 	}
 	bt.SetExp(currentEpoch + b.config.LifeTime)
 
-	if err := bt.Sign(neofsecdsa.Signer(b.config.Key.PrivateKey)); err != nil {
+	if err := bt.Sign(neofsecdsa.SignerRFC6979(b.config.Key.PrivateKey)); err != nil {
 		return "", "", err
 	}
 
