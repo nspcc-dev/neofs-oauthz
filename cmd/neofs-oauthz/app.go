@@ -92,7 +92,7 @@ func (a *app) initPool(ctx context.Context, key *keys.PrivateKey) {
 		err error
 		p   pool.InitParameters
 	)
-	p.SetSigner(neofsecdsa.Signer(key.PrivateKey))
+	p.SetSigner(neofsecdsa.SignerRFC6979(key.PrivateKey))
 
 	connTimeout := a.cfg.GetDuration(cfgConTimeout)
 	if connTimeout <= 0 {
