@@ -9,6 +9,7 @@ import (
 	"net/http"
 
 	"github.com/nspcc-dev/neofs-oauthz/bearer"
+	"github.com/nspcc-dev/neofs-sdk-go/client"
 	"github.com/nspcc-dev/neofs-sdk-go/pool"
 	"go.uber.org/zap"
 )
@@ -144,7 +145,7 @@ func (u *Authenticator) getUserInfo(ctx context.Context, state, code string) (st
 }
 
 func (u *Authenticator) getBearerToken(ctx context.Context, email string) (string, string, error) {
-	infoRes, err := u.sdkPool.NetworkInfo(ctx)
+	infoRes, err := u.sdkPool.NetworkInfo(ctx, client.PrmNetworkInfo{})
 	if err != nil {
 		return "", "", err
 	}
