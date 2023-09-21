@@ -1,4 +1,4 @@
-FROM golang:1.20-alpine as basebuilder
+FROM golang:1.21-alpine as basebuilder
 RUN apk add --update make bash ca-certificates
 
 FROM basebuilder as builder
@@ -13,7 +13,7 @@ COPY . /src
 RUN make
 
 # Executable image
-FROM alpine
+FROM scratch
 
 WORKDIR /
 
