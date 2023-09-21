@@ -13,7 +13,7 @@ COPY . /src
 RUN make
 
 # Executable image
-FROM alpine
+FROM scratch
 
 WORKDIR /
 
