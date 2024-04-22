@@ -25,11 +25,12 @@ func NewGenerator(config *Config) *Generator {
 
 // Config for bearer token generator.
 type Config struct {
-	EmailAttr   string
-	Key         *keys.PrivateKey
-	UserID      *user.ID
-	ContainerID cid.ID
-	LifeTime    uint64
+	EmailAttr     string
+	Key           *keys.PrivateKey
+	UserID        *user.ID
+	ContainerID   cid.ID
+	LifeTime      uint64
+	MaxObjectSize uint64
 }
 
 // NewBearer generates new token for supplied email.
@@ -46,6 +47,8 @@ func (b *Generator) NewBearer(email string, currentEpoch uint64) (string, string
 	rec.AddFilter(eacl.HeaderFromObject, eacl.MatchStringNotEqual, object.AttributeContentType, "text/html")
 	rec.AddFilter(eacl.HeaderFromObject, eacl.MatchStringNotEqual, object.AttributeContentType, "text/htmlh")
 	rec.AddFilter(eacl.HeaderFromObject, eacl.MatchStringNotEqual, object.AttributeContentType, "")
+	rec.AddObjectPayloadLengthFilter(eacl.MatchNumLE, b.config.MaxObjectSize)
+
 	eacl.AddFormedTarget(rec, eacl.RoleOthers)
 	t.AddRecord(rec)
 	rec2 := eacl.CreateRecord(eacl.ActionDeny, eacl.OperationPut)

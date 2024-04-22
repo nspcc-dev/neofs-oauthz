@@ -16,6 +16,7 @@ const (
 	defaultEmailAttr        = "Email"
 	defaultBearerCookieName = "Bearer"
 	defaultBearerLifetime   = 30
+	defaultMaxObjectSize    = 200 << 20 // 200MB
 	defaultConnectTimeout   = 30 * time.Second
 	defaultRebalanceTimer   = 15 * time.Second
 	defaultRequestTimeout   = 15 * time.Second
@@ -32,6 +33,7 @@ const (
 	cfgEmailAttr             = "neofs.bearer_email_attribute"
 	cfgUserID                = "neofs.bearer_user_id"
 	cfgBearerLifetime        = "neofs.bearer_lifetime"
+	cfgBearerMaxObjectSize   = "neofs.max_object_size"
 	cfgNeoFSWalletPath       = "neofs.wallet.path"
 	cfgNeoFSWalletPassphrase = "neofs.wallet.passphrase"
 	cfgNeoFSWalletAddress    = "neofs.wallet.address"
