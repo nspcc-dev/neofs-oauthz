@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/nspcc-dev/neo-go v0.105.1
-	github.com/nspcc-dev/neofs-sdk-go v1.0.0-rc.11.0.20240222163622-e29215027193
+	github.com/nspcc-dev/neofs-sdk-go v1.0.0-rc.11.0.20240419132800-d0208992bf00
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.18.2
 	go.uber.org/zap v1.27.0
@@ -25,8 +25,7 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/mr-tron/base58 v1.2.0 // indirect
 	github.com/nspcc-dev/hrw/v2 v2.0.1 // indirect
-	github.com/nspcc-dev/neofs-api-go/v2 v2.14.1-0.20240213170208-cfca09b5acbe // indirect
-	github.com/nspcc-dev/neofs-crypto v0.4.1 // indirect
+	github.com/nspcc-dev/neofs-api-go/v2 v2.14.1-0.20240305074711-35bc78d84dc4 // indirect
 	github.com/nspcc-dev/rfc6979 v0.2.1 // indirect
 	github.com/nspcc-dev/tzhash v1.7.2 // indirect
 	github.com/pelletier/go-toml/v2 v2.1.1 // indirect
