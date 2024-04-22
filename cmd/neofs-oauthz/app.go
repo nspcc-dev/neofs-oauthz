@@ -217,6 +217,10 @@ func (a *app) initAuthCfg(key *keys.PrivateKey) {
 	if maxObjectSize == 0 {
 		maxObjectSize = defaultMaxObjectSize
 	}
+	objectMaxLifetime := a.cfg.GetDuration(cfgBearerMaxObjectLifetime)
+	if objectMaxLifetime == 0 {
+		objectMaxLifetime = defaultMaxObjectLifetime
+	}
 
 	listenAddress := a.cfg.GetString(cfgListenAddress)
 	if len(listenAddress) == 0 {
@@ -229,12 +233,13 @@ func (a *app) initAuthCfg(key *keys.PrivateKey) {
 
 	a.authCfg = &auth.Config{
 		Bearer: &bearer.Config{
-			EmailAttr:     emailattr,
-			Key:           key,
-			UserID:        userID,
-			ContainerID:   containerID,
-			LifeTime:      lifetime,
-			MaxObjectSize: maxObjectSize,
+			EmailAttr:         emailattr,
+			Key:               key,
+			UserID:            userID,
+			ContainerID:       containerID,
+			LifeTime:          lifetime,
+			MaxObjectSize:     maxObjectSize,
+			ObjectMaxLifetime: objectMaxLifetime,
 		},
 		BearerCookieName: bearerCookieName,
 		Oauth:            make(map[string]*auth.ServiceOauth),

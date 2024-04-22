@@ -4,6 +4,8 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
+	"strconv"
+	"time"
 
 	"github.com/nspcc-dev/neo-go/pkg/crypto/keys"
 	"github.com/nspcc-dev/neofs-sdk-go/bearer"
@@ -25,17 +27,20 @@ func NewGenerator(config *Config) *Generator {
 
 // Config for bearer token generator.
 type Config struct {
-	EmailAttr     string
-	Key           *keys.PrivateKey
-	UserID        *user.ID
-	ContainerID   cid.ID
-	LifeTime      uint64
-	MaxObjectSize uint64
+	EmailAttr         string
+	Key               *keys.PrivateKey
+	UserID            *user.ID
+	ContainerID       cid.ID
+	LifeTime          uint64
+	MaxObjectSize     uint64
+	ObjectMaxLifetime time.Duration
 }
 
 // NewBearer generates new token for supplied email.
-func (b *Generator) NewBearer(email string, currentEpoch uint64) (string, string, error) {
+func (b *Generator) NewBearer(email string, currentEpoch uint64, msPerEpoch int64) (string, string, error) {
 	hashedEmail := fmt.Sprintf("%x", sha256.Sum256([]byte(email)))
+
+	epochs := uint64(b.config.ObjectMaxLifetime.Milliseconds() / msPerEpoch)
 
 	t := eacl.CreateTable(b.config.ContainerID)
 	// order of rec is important
@@ -48,6 +53,9 @@ func (b *Generator) NewBearer(email string, currentEpoch uint64) (string, string
 	rec.AddFilter(eacl.HeaderFromObject, eacl.MatchStringNotEqual, object.AttributeContentType, "text/htmlh")
 	rec.AddFilter(eacl.HeaderFromObject, eacl.MatchStringNotEqual, object.AttributeContentType, "")
 	rec.AddObjectPayloadLengthFilter(eacl.MatchNumLE, b.config.MaxObjectSize)
+
+	maxExpirationEpoch := strconv.FormatUint(currentEpoch+b.config.LifeTime+epochs, 10)
+	rec.AddFilter(eacl.HeaderFromObject, eacl.MatchStringEqual, object.AttributeExpirationEpoch, maxExpirationEpoch)
 
 	eacl.AddFormedTarget(rec, eacl.RoleOthers)
 	t.AddRecord(rec)
