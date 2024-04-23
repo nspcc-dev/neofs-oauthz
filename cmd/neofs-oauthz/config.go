@@ -13,12 +13,14 @@ import (
 )
 
 const (
-	defaultEmailAttr        = "Email"
-	defaultBearerCookieName = "Bearer"
-	defaultBearerLifetime   = 30
-	defaultConnectTimeout   = 30 * time.Second
-	defaultRebalanceTimer   = 15 * time.Second
-	defaultRequestTimeout   = 15 * time.Second
+	defaultEmailAttr         = "Email"
+	defaultBearerCookieName  = "Bearer"
+	defaultBearerLifetime    = 30                 // epochs
+	defaultMaxObjectSize     = 200 << 20          // 200MB
+	defaultMaxObjectLifetime = 4 * 24 * time.Hour // 4 days
+	defaultConnectTimeout    = 30 * time.Second
+	defaultRebalanceTimer    = 15 * time.Second
+	defaultRequestTimeout    = 15 * time.Second
 
 	defaultListenAddress = "0.0.0.0:8083"
 
@@ -28,13 +30,15 @@ const (
 	cfgTLSCertificate = "tls_certificate"
 	cfgTLSKey         = "tls_key"
 
-	cfgContainerID           = "neofs.cid"
-	cfgEmailAttr             = "neofs.bearer_email_attribute"
-	cfgUserID                = "neofs.bearer_user_id"
-	cfgBearerLifetime        = "neofs.bearer_lifetime"
-	cfgNeoFSWalletPath       = "neofs.wallet.path"
-	cfgNeoFSWalletPassphrase = "neofs.wallet.passphrase"
-	cfgNeoFSWalletAddress    = "neofs.wallet.address"
+	cfgContainerID             = "neofs.cid"
+	cfgEmailAttr               = "neofs.bearer_email_attribute"
+	cfgUserID                  = "neofs.bearer_user_id"
+	cfgBearerLifetime          = "neofs.bearer_lifetime"
+	cfgBearerMaxObjectSize     = "neofs.max_object_size"
+	cfgBearerMaxObjectLifetime = "neofs.max_object_lifetime"
+	cfgNeoFSWalletPath         = "neofs.wallet.path"
+	cfgNeoFSWalletPassphrase   = "neofs.wallet.passphrase"
+	cfgNeoFSWalletAddress      = "neofs.wallet.address"
 
 	cfgPeers = "peers"
 

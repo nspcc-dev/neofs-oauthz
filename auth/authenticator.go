@@ -150,5 +150,6 @@ func (u *Authenticator) getBearerToken(ctx context.Context, email string) (strin
 		return "", "", err
 	}
 
-	return u.generator.NewBearer(email, infoRes.CurrentEpoch())
+	msPerEpoch := infoRes.MsPerBlock() * int64(infoRes.EpochDuration())
+	return u.generator.NewBearer(email, infoRes.CurrentEpoch(), msPerEpoch)
 }

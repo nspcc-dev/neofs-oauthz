@@ -24,6 +24,8 @@ neofs:
     passphrase: '' # Passphrase to decrypt wallet. If you're using a wallet without a password, place '' here.
     address:  NfgHwwTi3wHAS8aFAN243C5vGbkYDpqLHP # Account address. If omitted default one will be used.
   cid: 2qAEwyRwV1sMmq8pc32mKCt1SRmTBXrzP9KbfMoHmqYM
+  max_object_size: 209715200 # max object size allowed to be deployed via bearer token. 200mb.
+  max_object_lifetime: "96h" # max object lifetime. 4 days.
 
 peers:
   0:
