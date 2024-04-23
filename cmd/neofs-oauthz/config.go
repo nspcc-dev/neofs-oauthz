@@ -15,7 +15,7 @@ import (
 const (
 	defaultEmailAttr         = "Email"
 	defaultBearerCookieName  = "Bearer"
-	defaultBearerLifetime    = 30
+	defaultBearerLifetime    = 30                 // epochs
 	defaultMaxObjectSize     = 200 << 20          // 200MB
 	defaultMaxObjectLifetime = 4 * 24 * time.Hour // 4 days
 	defaultConnectTimeout    = 30 * time.Second
