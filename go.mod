@@ -3,8 +3,8 @@ module github.com/nspcc-dev/neofs-oauthz
 go 1.20
 
 require (
-	github.com/nspcc-dev/neo-go v0.105.1
-	github.com/nspcc-dev/neofs-sdk-go v1.0.0-rc.11.0.20240419132800-d0208992bf00
+	github.com/nspcc-dev/neo-go v0.106.0
+	github.com/nspcc-dev/neofs-sdk-go v1.0.0-rc.12
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.18.2
 	go.uber.org/zap v1.27.0
@@ -18,7 +18,6 @@ require (
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/google/uuid v1.6.0 // indirect
-	github.com/hashicorp/golang-lru v1.0.2 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
