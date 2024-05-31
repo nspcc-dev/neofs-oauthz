@@ -55,7 +55,7 @@ func (b *Generator) NewBearer(email string, currentEpoch uint64, msPerEpoch int6
 	rec.AddObjectPayloadLengthFilter(eacl.MatchNumLE, b.config.MaxObjectSize)
 
 	maxExpirationEpoch := strconv.FormatUint(currentEpoch+b.config.LifeTime+epochs, 10)
-	rec.AddFilter(eacl.HeaderFromObject, eacl.MatchStringEqual, object.AttributeExpirationEpoch, maxExpirationEpoch)
+	rec.AddFilter(eacl.HeaderFromObject, eacl.MatchNumLE, object.AttributeExpirationEpoch, maxExpirationEpoch)
 
 	eacl.AddFormedTarget(rec, eacl.RoleOthers)
 	t.AddRecord(rec)
