@@ -43,25 +43,30 @@ func (b *Generator) NewBearer(email string, currentEpoch uint64, msPerEpoch int6
 	epochs := uint64(b.config.ObjectMaxLifetime.Milliseconds() / msPerEpoch)
 
 	t := eacl.CreateTable(b.config.ContainerID)
+	rec := eacl.CreateRecord(eacl.ActionDeny, eacl.OperationPut)
+	rec.AddFilter(eacl.HeaderFromObject, eacl.MatchNotPresent, object.AttributeContentType, "")
+	t.AddRecord(rec)
+	eacl.AddFormedTarget(rec, eacl.RoleOthers)
+
 	// order of rec is important
-	rec := eacl.CreateRecord(eacl.ActionAllow, eacl.OperationPut)
-	rec.AddObjectAttributeFilter(eacl.MatchStringEqual, b.config.EmailAttr, hashedEmail)
-	rec.AddFilter(eacl.HeaderFromObject, eacl.MatchStringNotEqual, object.AttributeContentType, "application/javascript")
-	rec.AddFilter(eacl.HeaderFromObject, eacl.MatchStringNotEqual, object.AttributeContentType, "text/javascript")
-	rec.AddFilter(eacl.HeaderFromObject, eacl.MatchStringNotEqual, object.AttributeContentType, "application/xhtml+xml")
-	rec.AddFilter(eacl.HeaderFromObject, eacl.MatchStringNotEqual, object.AttributeContentType, "text/html")
-	rec.AddFilter(eacl.HeaderFromObject, eacl.MatchStringNotEqual, object.AttributeContentType, "text/htmlh")
-	rec.AddFilter(eacl.HeaderFromObject, eacl.MatchStringNotEqual, object.AttributeContentType, "")
-	rec.AddObjectPayloadLengthFilter(eacl.MatchNumLE, b.config.MaxObjectSize)
+	rec2 := eacl.CreateRecord(eacl.ActionAllow, eacl.OperationPut)
+	rec2.AddObjectAttributeFilter(eacl.MatchStringEqual, b.config.EmailAttr, hashedEmail)
+	rec2.AddFilter(eacl.HeaderFromObject, eacl.MatchStringNotEqual, object.AttributeContentType, "application/javascript")
+	rec2.AddFilter(eacl.HeaderFromObject, eacl.MatchStringNotEqual, object.AttributeContentType, "text/javascript")
+	rec2.AddFilter(eacl.HeaderFromObject, eacl.MatchStringNotEqual, object.AttributeContentType, "application/xhtml+xml")
+	rec2.AddFilter(eacl.HeaderFromObject, eacl.MatchStringNotEqual, object.AttributeContentType, "text/html")
+	rec2.AddFilter(eacl.HeaderFromObject, eacl.MatchStringNotEqual, object.AttributeContentType, "text/htmlh")
+	rec2.AddFilter(eacl.HeaderFromObject, eacl.MatchStringNotEqual, object.AttributeContentType, "")
+	rec2.AddObjectPayloadLengthFilter(eacl.MatchNumLE, b.config.MaxObjectSize)
 
 	maxExpirationEpoch := strconv.FormatUint(currentEpoch+b.config.LifeTime+epochs, 10)
-	rec.AddFilter(eacl.HeaderFromObject, eacl.MatchNumLE, object.AttributeExpirationEpoch, maxExpirationEpoch)
+	rec2.AddFilter(eacl.HeaderFromObject, eacl.MatchNumLE, object.AttributeExpirationEpoch, maxExpirationEpoch)
 
-	eacl.AddFormedTarget(rec, eacl.RoleOthers)
-	t.AddRecord(rec)
-	rec2 := eacl.CreateRecord(eacl.ActionDeny, eacl.OperationPut)
 	eacl.AddFormedTarget(rec2, eacl.RoleOthers)
 	t.AddRecord(rec2)
+	rec3 := eacl.CreateRecord(eacl.ActionDeny, eacl.OperationPut)
+	eacl.AddFormedTarget(rec3, eacl.RoleOthers)
+	t.AddRecord(rec3)
 
 	var bt bearer.Token
 	bt.SetEACLTable(*t)
