@@ -16,3 +16,4 @@ testfile
 
 coverage.txt
 coverage.html
+.golangci.yml
