@@ -46,3 +46,7 @@ bearer_cookie_name: "Bearer"
 connect_timeout: 30s
 request_timeout: 15s
 rebalance_timer: 15s
+
+prometheus:
+  enabled: true
+  address: localhost:9986
