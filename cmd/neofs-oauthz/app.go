@@ -30,6 +30,8 @@ type (
 		cfg       *viper.Viper
 		webServer *http.Server
 		webDone   chan struct{}
+
+		gateMetrics *gateMetrics
 	}
 
 	// App is an interface for the main gateway function.
@@ -65,15 +67,27 @@ func WithConfig(c *viper.Viper) Option {
 func newApp(ctx context.Context, opt ...Option) App {
 	var err error
 	a := &app{
-		log:       zap.L(),
-		cfg:       viper.GetViper(),
-		webServer: new(http.Server),
-		webDone:   make(chan struct{}),
+		log:         zap.L(),
+		cfg:         viper.GetViper(),
+		webServer:   new(http.Server),
+		webDone:     make(chan struct{}),
+		gateMetrics: newGateMetrics(),
 	}
 
 	for i := range opt {
 		opt[i](a)
 	}
+
+	a.gateMetrics.SetAppVersion(Version)
+
+	prometheusService := newPrometheus(
+		a.log,
+		a.cfg.GetBool(cfgPrometheusEnabled),
+		a.cfg.GetString(cfgPrometheusAddress),
+	)
+
+	services := newServices([]*service{prometheusService})
+	services.RunServices()
 
 	key, err := a.getKey()
 	if err != nil {
@@ -292,6 +306,8 @@ func (a *app) Serve(ctx context.Context) {
 	myHandler.HandleFunc("/login", authenticator.LogInWith)
 	myHandler.HandleFunc("/callback", authenticator.Callback)
 	a.webServer.Handler = myHandler
+
+	a.gateMetrics.SetServiceStarted()
 
 	a.webServer.Addr = a.authCfg.Host
 	if a.authCfg.TLSEnabled {

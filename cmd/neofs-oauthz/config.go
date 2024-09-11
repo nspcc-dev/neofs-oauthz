@@ -62,6 +62,9 @@ const (
 	cfgOauthEndpointTokenFmt = "oauth.%s.endpoint.token"
 	cfgRedirectURL           = "redirect.url"
 	callbackURLFmt           = "%scallback"
+
+	cfgPrometheusEnabled = "prometheus.enabled"
+	cfgPrometheusAddress = "prometheus.address"
 )
 
 var ignore = map[string]struct{}{
