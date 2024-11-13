@@ -146,6 +146,7 @@ func newLogger(v *viper.Viper) (*zap.Logger, error) {
 		}
 	}
 
+	c.Sampling = nil
 	if term.IsTerminal(int(os.Stdout.Fd())) {
 		c.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
 	} else {
