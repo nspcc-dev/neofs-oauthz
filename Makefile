@@ -1,10 +1,10 @@
 #!/usr/bin/make -f
 
 REPO ?= $(shell go list -m)
-VERSION ?= $(shell git describe --tags --match "v*" --dirty --always)
+VERSION ?= $(shell git describe --tags --dirty --match "v*" --always --abbrev=8 | sed 's/^v//' 2>/dev/null || cat VERSION 2>/dev/null || echo "develop")
 
 HUB_IMAGE ?= nspccdev/neofs-oauthz
-HUB_TAG ?= "$(shell echo ${VERSION} | sed 's/^v//')"
+HUB_TAG ?= "$(shell echo ${VERSION})"
 
 # List of binaries to build. For now just one.
 BIN = bin
