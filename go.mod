@@ -6,7 +6,7 @@ require (
 	github.com/nspcc-dev/neo-go v0.108.1
 	github.com/nspcc-dev/neofs-sdk-go v1.0.0-rc.13
 	github.com/prometheus/client_golang v1.21.1
-	github.com/spf13/pflag v1.0.5
+	github.com/spf13/pflag v1.0.6
 	github.com/spf13/viper v1.19.0
 	go.uber.org/zap v1.27.0
 	golang.org/x/oauth2 v0.24.0
