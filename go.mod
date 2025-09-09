@@ -1,6 +1,6 @@
 module github.com/nspcc-dev/neofs-oauthz
 
-go 1.23.0
+go 1.24
 
 require (
 	github.com/nspcc-dev/neo-go v0.108.1
