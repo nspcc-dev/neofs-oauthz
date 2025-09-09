@@ -10,7 +10,7 @@ require (
 	github.com/spf13/viper v1.21.0
 	go.uber.org/zap v1.27.0
 	golang.org/x/oauth2 v0.31.0
-	golang.org/x/term v0.34.0
+	golang.org/x/term v0.35.0
 )
 
 require (
