@@ -77,12 +77,7 @@ func (u *Authenticator) LogInWith(w http.ResponseWriter, r *http.Request) {
 	}
 
 	b := make([]byte, 8)
-	if _, err := rand.Read(b); err != nil {
-		msg := "unable to generate state"
-		u.log.Error(msg, zap.Error(err))
-		http.Error(w, msg, http.StatusInternalServerError)
-		return
-	}
+	_, _ = rand.Read(b)
 
 	state := hex.EncodeToString(b)
 	u.services.AddState(state, serviceName)
