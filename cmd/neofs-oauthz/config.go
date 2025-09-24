@@ -114,7 +114,7 @@ func newConfig() *viper.Viper {
 				continue
 			}
 
-			k := strings.Replace(keys[i], ".", "_", -1)
+			k := strings.ReplaceAll(keys[i], ".", "_")
 			fmt.Printf("%s_%s = %v\n", Prefix, strings.ToUpper(k), v.Get(keys[i]))
 		}
 
