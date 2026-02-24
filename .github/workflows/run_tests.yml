@@ -67,7 +67,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go_versions: [ '1.24', '1.25' ]
+        go_versions: [ '1.25', '1.26' ]
     steps:
       - uses: actions/checkout@v3
         with:
