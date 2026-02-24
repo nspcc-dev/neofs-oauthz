@@ -20,7 +20,7 @@ type Generator struct {
 	config *Config
 }
 
-type newRecordFun func() *eacl.Record
+type newRecordFun func() eacl.Record
 
 // NewGenerator creates new bearer token generator using config.
 func NewGenerator(config *Config) *Generator {
@@ -40,36 +40,36 @@ type Config struct {
 
 func (b *Generator) createRecords(hashedEmail string, currentEpoch uint64, msPerEpoch int64) []newRecordFun {
 	records := []newRecordFun{
-		func() *eacl.Record {
-			rec := eacl.CreateRecord(eacl.ActionDeny, eacl.OperationPut)
-			rec.AddFilter(eacl.HeaderFromObject, eacl.MatchNotPresent, object.AttributeContentType, "")
+		func() eacl.Record {
+			rec := eacl.ConstructRecord(eacl.ActionDeny, eacl.OperationPut, []eacl.Target{eacl.NewTargetByRole(eacl.RoleOthers)})
+			rec.SetFilters([]eacl.Filter{eacl.NewObjectPropertyFilter(object.AttributeContentType, eacl.MatchNotPresent, "")})
 
 			return rec
 		},
-		func() *eacl.Record {
+		func() eacl.Record {
 			epochs := uint64(b.config.ObjectMaxLifetime.Milliseconds() / msPerEpoch)
 			maxExpirationEpoch := strconv.FormatUint(currentEpoch+b.config.LifeTime+epochs, 10)
 
 			// order of rec is important
-			rec := eacl.CreateRecord(eacl.ActionAllow, eacl.OperationPut)
-			rec.AddObjectAttributeFilter(eacl.MatchStringEqual, b.config.EmailAttr, hashedEmail)
-			rec.AddFilter(eacl.HeaderFromObject, eacl.MatchStringNotEqual, object.AttributeContentType, "application/javascript")
-			rec.AddFilter(eacl.HeaderFromObject, eacl.MatchStringNotEqual, object.AttributeContentType, "application/x-javascript")
-			rec.AddFilter(eacl.HeaderFromObject, eacl.MatchStringNotEqual, object.AttributeContentType, "text/javascript")
-			rec.AddFilter(eacl.HeaderFromObject, eacl.MatchStringNotEqual, object.AttributeContentType, "application/xhtml+xml")
-			rec.AddFilter(eacl.HeaderFromObject, eacl.MatchStringNotEqual, object.AttributeContentType, "text/html")
-			rec.AddFilter(eacl.HeaderFromObject, eacl.MatchStringNotEqual, object.AttributeContentType, "text/htmlh")
-			rec.AddFilter(eacl.HeaderFromObject, eacl.MatchStringNotEqual, object.AttributeContentType, "")
-			rec.AddObjectPayloadLengthFilter(eacl.MatchNumLE, b.config.MaxObjectSize)
-			rec.AddFilter(eacl.HeaderFromObject, eacl.MatchNumLE, object.AttributeExpirationEpoch, maxExpirationEpoch)
+			rec := eacl.ConstructRecord(eacl.ActionAllow, eacl.OperationPut, []eacl.Target{eacl.NewTargetByRole(eacl.RoleOthers)})
+			filters := []eacl.Filter{
+				eacl.NewObjectPropertyFilter(b.config.EmailAttr, eacl.MatchStringEqual, hashedEmail),
+				eacl.NewObjectPropertyFilter(object.AttributeContentType, eacl.MatchStringNotEqual, "application/javascript"),
+				eacl.NewObjectPropertyFilter(object.AttributeContentType, eacl.MatchStringNotEqual, "application/x-javascript"),
+				eacl.NewObjectPropertyFilter(object.AttributeContentType, eacl.MatchStringNotEqual, "text/javascript"),
+				eacl.NewObjectPropertyFilter(object.AttributeContentType, eacl.MatchStringNotEqual, "application/xhtml+xml"),
+				eacl.NewObjectPropertyFilter(object.AttributeContentType, eacl.MatchStringNotEqual, "text/html"),
+				eacl.NewObjectPropertyFilter(object.AttributeContentType, eacl.MatchStringNotEqual, "text/htmlh"),
+				eacl.NewObjectPropertyFilter(object.AttributeContentType, eacl.MatchStringNotEqual, ""),
+				eacl.NewFilterObjectPayloadSizeIs(eacl.MatchNumLE, b.config.MaxObjectSize),
+				eacl.NewObjectPropertyFilter(object.AttributeExpirationEpoch, eacl.MatchNumLE, maxExpirationEpoch),
+			}
+			rec.SetFilters(filters)
 
 			return rec
 		},
-		func() *eacl.Record {
-			rec := eacl.CreateRecord(eacl.ActionDeny, eacl.OperationPut)
-			eacl.AddFormedTarget(rec, eacl.RoleOthers)
-
-			return rec
+		func() eacl.Record {
+			return eacl.ConstructRecord(eacl.ActionDeny, eacl.OperationPut, []eacl.Target{eacl.NewTargetByRole(eacl.RoleOthers)})
 		},
 	}
 
@@ -78,19 +78,21 @@ func (b *Generator) createRecords(hashedEmail string, currentEpoch uint64, msPer
 
 // NewBearer generates new token for supplied email.
 func (b *Generator) NewBearer(email string, currentEpoch uint64, msPerEpoch int64) (string, string, error) {
-	hashedEmail := fmt.Sprintf("%x", sha256.Sum256([]byte(email)))
-
-	records := b.createRecords(hashedEmail, currentEpoch, msPerEpoch)
-	t := eacl.CreateTable(b.config.ContainerID)
+	var (
+		hashedEmail = fmt.Sprintf("%x", sha256.Sum256([]byte(email)))
+		records     = b.createRecords(hashedEmail, currentEpoch, msPerEpoch)
+		eaclRecords = make([]eacl.Record, 0, len(records))
+	)
 
 	for _, record := range records {
-		rec := record()
-		eacl.AddFormedTarget(rec, eacl.RoleOthers)
-		t.AddRecord(rec)
+		eaclRecords = append(eaclRecords, record())
 	}
 
+	t := eacl.ConstructTable(eaclRecords)
+	t.SetCID(b.config.ContainerID)
+
 	var bt bearer.Token
-	bt.SetEACLTable(*t)
+	bt.SetEACLTable(t)
 	if b.config.UserID != nil {
 		bt.ForUser(*b.config.UserID)
 	}
