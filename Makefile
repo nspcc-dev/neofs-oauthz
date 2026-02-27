@@ -13,6 +13,8 @@ DIRS = $(BIN)
 CMDS = $(notdir $(basename $(wildcard cmd/*)))
 BINS = $(addprefix $(BIN)/, $(CMDS))
 
+.PHONY: all dep image gh-docker-vars test cover fmts fmt imports modernize lint
+
 # Make all binaries
 all: $(DIRS) $(BINS)
 
