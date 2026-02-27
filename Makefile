@@ -19,7 +19,6 @@ all: $(DIRS) $(BINS)
 $(BINS): $(DIRS) dep
 	@echo "⇒ Build $@"
 	CGO_ENABLED=0 \
-	GO111MODULE=on \
 	go build -v -trimpath \
 	-ldflags "-X main.Version=$(VERSION)" \
 	-o $@ ./cmd/$(notdir $@)
@@ -32,11 +31,9 @@ $(DIRS):
 dep:
 	@printf "⇒ Download requirements: "
 	@CGO_ENABLED=0 \
-	GO111MODULE=on \
 	go mod download && echo OK
 	@printf "⇒ Tidy requirements: "
 	@CGO_ENABLED=0 \
-	GO111MODULE=on \
 	go mod tidy -v && echo OK
 
 image:
@@ -68,12 +65,12 @@ fmts: fmt imports modernize
 # Reformat code
 fmt:
 	@echo "⇒ Processing gofmt check"
-	@GO111MODULE=on gofmt -s -w ./
+	@gofmt -s -w ./
 
 # Reformat imports
 imports:
 	@echo "⇒ Processing goimports check"
-	@GO111MODULE=on goimports -w ./
+	@goimports -w ./
 
 # Prettify code
 modernize:
