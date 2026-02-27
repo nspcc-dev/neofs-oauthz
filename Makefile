@@ -63,7 +63,7 @@ cover:
 	@go tool cover -html=coverage.txt -o coverage.html
 
 # Run all code formatters
-fmts: fmt imports
+fmts: fmt imports modernize
 
 # Reformat code
 fmt:
@@ -74,6 +74,11 @@ fmt:
 imports:
 	@echo "⇒ Processing goimports check"
 	@GO111MODULE=on goimports -w ./
+
+# Prettify code
+modernize:
+	@echo "⇒ Processing modernize check"
+	@go run golang.org/x/tools/go/analysis/passes/modernize/cmd/modernize@latest -fix ./...
 
 .golangci.yml:
 	wget -O $@ https://github.com/nspcc-dev/.github/raw/master/.golangci.yml
