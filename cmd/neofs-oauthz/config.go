@@ -16,6 +16,7 @@ import (
 
 const (
 	defaultEmailAttr         = "Email"
+	defaultReceiverAttr      = "Receiver"
 	defaultBearerCookieName  = "Bearer"
 	defaultBearerLifetime    = 30                 // epochs
 	defaultMaxObjectSize     = 200 << 20          // 200MB
@@ -34,6 +35,7 @@ const (
 
 	cfgContainerID             = "neofs.cid"
 	cfgEmailAttr               = "neofs.bearer_email_attribute"
+	cfgReceiverAttr            = "neofs.bearer_receiver_attribute"
 	cfgUserID                  = "neofs.bearer_user_id"
 	cfgBearerLifetime          = "neofs.bearer_lifetime"
 	cfgBearerMaxObjectSize     = "neofs.max_object_size"

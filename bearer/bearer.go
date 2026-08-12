@@ -20,7 +20,9 @@ type Generator struct {
 	config *Config
 }
 
-type newRecordFun func() eacl.Record
+var (
+	readOps = []eacl.Operation{eacl.OperationGet, eacl.OperationHead}
+)
 
 // NewGenerator creates new bearer token generator using config.
 func NewGenerator(config *Config) *Generator {
@@ -30,6 +32,7 @@ func NewGenerator(config *Config) *Generator {
 // Config for bearer token generator.
 type Config struct {
 	EmailAttr         string
+	ReceiverAttr      string
 	Key               *keys.PrivateKey
 	UserID            *user.ID
 	ContainerID       cid.ID
@@ -38,39 +41,59 @@ type Config struct {
 	ObjectMaxLifetime time.Duration
 }
 
-func (b *Generator) createRecords(hashedEmail string, currentEpoch uint64, msPerEpoch int64) []newRecordFun {
-	records := []newRecordFun{
-		func() eacl.Record {
-			rec := eacl.ConstructRecord(eacl.ActionDeny, eacl.OperationPut, []eacl.Target{eacl.NewTargetByRole(eacl.RoleOthers)})
-			rec.SetFilters([]eacl.Filter{eacl.NewObjectPropertyFilter(object.AttributeContentType, eacl.MatchNotPresent, "")})
+func othersTarget() []eacl.Target {
+	return []eacl.Target{eacl.NewTargetByRole(eacl.RoleOthers)}
+}
 
-			return rec
-		},
-		func() eacl.Record {
-			epochs := uint64(b.config.ObjectMaxLifetime.Milliseconds() / msPerEpoch)
-			maxExpirationEpoch := strconv.FormatUint(currentEpoch+b.config.LifeTime+epochs, 10)
+func (b *Generator) createRecords(hashedEmail string, currentEpoch uint64, msPerEpoch int64) []eacl.Record {
+	epochs := uint64(b.config.ObjectMaxLifetime.Milliseconds() / msPerEpoch)
+	maxExpirationEpoch := strconv.FormatUint(currentEpoch+b.config.LifeTime+epochs, 10)
 
-			// order of rec is important
-			rec := eacl.ConstructRecord(eacl.ActionAllow, eacl.OperationPut, []eacl.Target{eacl.NewTargetByRole(eacl.RoleOthers)})
-			filters := []eacl.Filter{
+	// order of records is important
+	records := []eacl.Record{
+		eacl.ConstructRecord(
+			eacl.ActionDeny, eacl.OperationPut, othersTarget(),
+			eacl.NewObjectPropertyFilter(object.AttributeContentType, eacl.MatchNotPresent, ""),
+		),
+		eacl.ConstructRecord(
+			eacl.ActionAllow, eacl.OperationPut, othersTarget(),
+			eacl.NewObjectPropertyFilter(b.config.EmailAttr, eacl.MatchStringEqual, hashedEmail),
+			eacl.NewObjectPropertyFilter(object.AttributeContentType, eacl.MatchStringNotEqual, "application/javascript"),
+			eacl.NewObjectPropertyFilter(object.AttributeContentType, eacl.MatchStringNotEqual, "application/x-javascript"),
+			eacl.NewObjectPropertyFilter(object.AttributeContentType, eacl.MatchStringNotEqual, "text/javascript"),
+			eacl.NewObjectPropertyFilter(object.AttributeContentType, eacl.MatchStringNotEqual, "application/xhtml+xml"),
+			eacl.NewObjectPropertyFilter(object.AttributeContentType, eacl.MatchStringNotEqual, "text/html"),
+			eacl.NewObjectPropertyFilter(object.AttributeContentType, eacl.MatchStringNotEqual, "text/htmlh"),
+			eacl.NewObjectPropertyFilter(object.AttributeContentType, eacl.MatchStringNotEqual, ""),
+			eacl.NewFilterObjectPayloadSizeIs(eacl.MatchNumLE, b.config.MaxObjectSize),
+			eacl.NewObjectPropertyFilter(object.AttributeExpirationEpoch, eacl.MatchNumLE, maxExpirationEpoch),
+		),
+		eacl.ConstructRecord(
+			eacl.ActionDeny, eacl.OperationPut, othersTarget(),
+		),
+	}
+
+	for _, op := range readOps {
+		// order of records is important, the denying one must be the last
+		records = append(records,
+			// object is not addressed to anyone, so it's public
+			eacl.ConstructRecord(
+				eacl.ActionAllow, op, othersTarget(),
+				eacl.NewObjectPropertyFilter(b.config.ReceiverAttr, eacl.MatchNotPresent, ""),
+			),
+			// object is addressed to exact user
+			eacl.ConstructRecord(
+				eacl.ActionAllow, op, othersTarget(),
+				eacl.NewObjectPropertyFilter(b.config.ReceiverAttr, eacl.MatchStringEqual, hashedEmail),
+			),
+			// object was uploaded by user itself
+			eacl.ConstructRecord(
+				eacl.ActionAllow, op, othersTarget(),
 				eacl.NewObjectPropertyFilter(b.config.EmailAttr, eacl.MatchStringEqual, hashedEmail),
-				eacl.NewObjectPropertyFilter(object.AttributeContentType, eacl.MatchStringNotEqual, "application/javascript"),
-				eacl.NewObjectPropertyFilter(object.AttributeContentType, eacl.MatchStringNotEqual, "application/x-javascript"),
-				eacl.NewObjectPropertyFilter(object.AttributeContentType, eacl.MatchStringNotEqual, "text/javascript"),
-				eacl.NewObjectPropertyFilter(object.AttributeContentType, eacl.MatchStringNotEqual, "application/xhtml+xml"),
-				eacl.NewObjectPropertyFilter(object.AttributeContentType, eacl.MatchStringNotEqual, "text/html"),
-				eacl.NewObjectPropertyFilter(object.AttributeContentType, eacl.MatchStringNotEqual, "text/htmlh"),
-				eacl.NewObjectPropertyFilter(object.AttributeContentType, eacl.MatchStringNotEqual, ""),
-				eacl.NewFilterObjectPayloadSizeIs(eacl.MatchNumLE, b.config.MaxObjectSize),
-				eacl.NewObjectPropertyFilter(object.AttributeExpirationEpoch, eacl.MatchNumLE, maxExpirationEpoch),
-			}
-			rec.SetFilters(filters)
-
-			return rec
-		},
-		func() eacl.Record {
-			return eacl.ConstructRecord(eacl.ActionDeny, eacl.OperationPut, []eacl.Target{eacl.NewTargetByRole(eacl.RoleOthers)})
-		},
+			),
+			// anything else is addressed to somebody else
+			eacl.ConstructRecord(eacl.ActionDeny, op, othersTarget()),
+		)
 	}
 
 	return records
@@ -81,14 +104,9 @@ func (b *Generator) NewBearer(email string, currentEpoch uint64, msPerEpoch int6
 	var (
 		hashedEmail = fmt.Sprintf("%x", sha256.Sum256([]byte(email)))
 		records     = b.createRecords(hashedEmail, currentEpoch, msPerEpoch)
-		eaclRecords = make([]eacl.Record, 0, len(records))
 	)
 
-	for _, record := range records {
-		eaclRecords = append(eaclRecords, record())
-	}
-
-	t := eacl.ConstructTable(eaclRecords)
+	t := eacl.ConstructTable(records)
 	t.SetCID(b.config.ContainerID)
 
 	var bt bearer.Token

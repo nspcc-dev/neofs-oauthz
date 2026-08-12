@@ -65,15 +65,28 @@ neofs:
   cid: 2qAEwyRwV1sMmq8pc32mKCt1SRmTBXrzP9KbfMoHmqYM
   bearer_user_id: NUVPACMnKFhpuHjsRjhUvXz1XhqfGZYVtY
   bearer_email_attribute: email
+  bearer_receiver_attribute: Receiver
 ```
-| Parameter                 | Type     | Default value | Description                                                              |
-|---------------------------|----------|---------------|--------------------------------------------------------------------------|
-| `neofs.wallet.path`       | `string` |               | Path to the wallet.                                                      |
-| `neofs.wallet.address`    | `string` |               | Account address to get from wallet. If omitted default one will be used. |
-| `neofs.wallet.passphrase` | `string` |               | Passphrase to decrypt wallet.                                            |
-| `neofs.cid`               | `string` |               | container ID in NeoFS where objects will be stored                       |
-| `neofs.bearer_user_id`    | `string` |               | User ID that will be given the right to upload objects into NeoFS container (can be omitted to allow this for any owner of the token) |
-| `neofs.bearer_email_attribute`| `string`| `Email`    | The name of the NeoFS attribute used as to match user by his e-mail address (case sensitive as all NeoFS attributes) |
+| Parameter                         | Type     | Default value | Description                                                                                                                           |
+|-----------------------------------|----------|---------------|---------------------------------------------------------------------------------------------------------------------------------------|
+| `neofs.wallet.path`               | `string` |               | Path to the wallet.                                                                                                                   |
+| `neofs.wallet.address`            | `string` |               | Account address to get from wallet. If omitted default one will be used.                                                              |
+| `neofs.wallet.passphrase`         | `string` |               | Passphrase to decrypt wallet.                                                                                                         |
+| `neofs.cid`                       | `string` |               | container ID in NeoFS where objects will be stored                                                                                    |
+| `neofs.bearer_user_id`            | `string` |               | User ID that will be given the right to upload objects into NeoFS container (can be omitted to allow this for any owner of the token) |
+| `neofs.bearer_email_attribute`    | `string` | `Email`       | The name of the NeoFS attribute used as to match user by his e-mail address (case sensitive as all NeoFS attributes)                  |
+| `neofs.bearer_receiver_attribute` | `string` | `Receiver`    | The name of the NeoFS attribute naming the user an object is addressed to (case sensitive as all NeoFS attributes)                    |
+
+### Receiver attribute
+
+The attribute named by `neofs.bearer_receiver_attribute` (`Receiver` by default)
+must contain the **lowercase hex SHA-256 hash** of the recipient's e-mail address, exactly the way this service hashes
+the address it gets from the OAuth provider (the same value is handed to the frontend in the `X-Attribute-Email`
+cookie).
+
+No normalization is applied before hashing, so `Bob@example.com` and
+`bob@example.com` produce different hashes and an object addressed to one of
+them is unreadable for the other.
 
 ### NeoFS nodes section
 ```
