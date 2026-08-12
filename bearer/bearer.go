@@ -20,6 +20,10 @@ type Generator struct {
 	config *Config
 }
 
+var (
+	readOps = []eacl.Operation{eacl.OperationGet, eacl.OperationHead}
+)
+
 // NewGenerator creates new bearer token generator using config.
 func NewGenerator(config *Config) *Generator {
 	return &Generator{config: config}
@@ -28,6 +32,7 @@ func NewGenerator(config *Config) *Generator {
 // Config for bearer token generator.
 type Config struct {
 	EmailAttr         string
+	ReceiverAttr      string
 	Key               *keys.PrivateKey
 	UserID            *user.ID
 	ContainerID       cid.ID
@@ -45,7 +50,7 @@ func (b *Generator) createRecords(hashedEmail string, currentEpoch uint64, msPer
 	maxExpirationEpoch := strconv.FormatUint(currentEpoch+b.config.LifeTime+epochs, 10)
 
 	// order of records is important
-	return []eacl.Record{
+	records := []eacl.Record{
 		eacl.ConstructRecord(
 			eacl.ActionDeny, eacl.OperationPut, othersTarget(),
 			eacl.NewObjectPropertyFilter(object.AttributeContentType, eacl.MatchNotPresent, ""),
@@ -67,6 +72,31 @@ func (b *Generator) createRecords(hashedEmail string, currentEpoch uint64, msPer
 			eacl.ActionDeny, eacl.OperationPut, othersTarget(),
 		),
 	}
+
+	for _, op := range readOps {
+		// order of records is important, the denying one must be the last
+		records = append(records,
+			// object is not addressed to anyone, so it's public
+			eacl.ConstructRecord(
+				eacl.ActionAllow, op, othersTarget(),
+				eacl.NewObjectPropertyFilter(b.config.ReceiverAttr, eacl.MatchNotPresent, ""),
+			),
+			// object is addressed to exact user
+			eacl.ConstructRecord(
+				eacl.ActionAllow, op, othersTarget(),
+				eacl.NewObjectPropertyFilter(b.config.ReceiverAttr, eacl.MatchStringEqual, hashedEmail),
+			),
+			// object was uploaded by user itself
+			eacl.ConstructRecord(
+				eacl.ActionAllow, op, othersTarget(),
+				eacl.NewObjectPropertyFilter(b.config.EmailAttr, eacl.MatchStringEqual, hashedEmail),
+			),
+			// anything else is addressed to somebody else
+			eacl.ConstructRecord(eacl.ActionDeny, op, othersTarget()),
+		)
+	}
+
+	return records
 }
 
 // NewBearer generates new token for supplied email.

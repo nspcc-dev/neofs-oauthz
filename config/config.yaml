@@ -18,6 +18,7 @@ oauth:
 
 neofs:
   bearer_email_attribute: email # Exact name of the NeoFS attribute to be used for e-mail hash matching.
+  bearer_receiver_attribute: Receiver # Exact name of the NeoFS attribute naming the object's reader.
   bearer_user_id: NUVPACMnKFhpuHjsRjhUvXz1XhqfGZYVtY # If set, limits bearer token issued to the specified user ID.
   wallet:
     path: /path/to/wallet.json
