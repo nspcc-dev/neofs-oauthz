@@ -3,8 +3,8 @@ module github.com/nspcc-dev/neofs-oauthz
 go 1.25.0
 
 require (
-	github.com/nspcc-dev/neo-go v0.117.0
-	github.com/nspcc-dev/neofs-sdk-go v1.0.0-rc.17
+	github.com/nspcc-dev/neo-go v0.121.0
+	github.com/nspcc-dev/neofs-sdk-go v1.0.0-rc.21
 	github.com/prometheus/client_golang v1.23.2
 	github.com/spf13/pflag v1.0.10
 	github.com/spf13/viper v1.21.0
@@ -19,7 +19,7 @@ require (
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.7 // indirect
 	github.com/decred/dcrd/crypto/ripemd160 v1.0.2 // indirect
-	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.4.0 // indirect
+	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.4.1 // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
@@ -28,7 +28,7 @@ require (
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/nspcc-dev/hrw/v2 v2.0.4 // indirect
 	github.com/nspcc-dev/rfc6979 v0.2.4 // indirect
-	github.com/nspcc-dev/tzhash v1.8.3 // indirect
+	github.com/nspcc-dev/tzhash v1.8.4 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
 	github.com/prometheus/client_model v0.6.2 // indirect
 	github.com/prometheus/common v0.66.1 // indirect
@@ -41,7 +41,7 @@ require (
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/twmb/murmur3 v1.1.8 // indirect
 	github.com/urfave/cli/v2 v2.27.7 // indirect
-	github.com/xrash/smetrics v0.0.0-20240521201337-686a1a2994c1 // indirect
+	github.com/xrash/smetrics v0.0.0-20250705151800-55b8f293f342 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.2 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
