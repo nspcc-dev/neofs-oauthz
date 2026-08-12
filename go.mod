@@ -3,7 +3,7 @@ module github.com/nspcc-dev/neofs-oauthz
 go 1.25.0
 
 require (
-	github.com/nspcc-dev/neo-go v0.121.0
+	github.com/nspcc-dev/neo-go v0.122.0
 	github.com/nspcc-dev/neofs-sdk-go v1.0.0-rc.21
 	github.com/prometheus/client_golang v1.23.2
 	github.com/spf13/pflag v1.0.10
