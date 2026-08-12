@@ -38,10 +38,14 @@ type Config struct {
 	ObjectMaxLifetime time.Duration
 }
 
+func othersTarget() []eacl.Target {
+	return []eacl.Target{eacl.NewTargetByRole(eacl.RoleOthers)}
+}
+
 func (b *Generator) createRecords(hashedEmail string, currentEpoch uint64, msPerEpoch int64) []newRecordFun {
 	records := []newRecordFun{
 		func() eacl.Record {
-			rec := eacl.ConstructRecord(eacl.ActionDeny, eacl.OperationPut, []eacl.Target{eacl.NewTargetByRole(eacl.RoleOthers)})
+			rec := eacl.ConstructRecord(eacl.ActionDeny, eacl.OperationPut, othersTarget())
 			rec.SetFilters([]eacl.Filter{eacl.NewObjectPropertyFilter(object.AttributeContentType, eacl.MatchNotPresent, "")})
 
 			return rec
@@ -51,7 +55,7 @@ func (b *Generator) createRecords(hashedEmail string, currentEpoch uint64, msPer
 			maxExpirationEpoch := strconv.FormatUint(currentEpoch+b.config.LifeTime+epochs, 10)
 
 			// order of rec is important
-			rec := eacl.ConstructRecord(eacl.ActionAllow, eacl.OperationPut, []eacl.Target{eacl.NewTargetByRole(eacl.RoleOthers)})
+			rec := eacl.ConstructRecord(eacl.ActionAllow, eacl.OperationPut, othersTarget())
 			filters := []eacl.Filter{
 				eacl.NewObjectPropertyFilter(b.config.EmailAttr, eacl.MatchStringEqual, hashedEmail),
 				eacl.NewObjectPropertyFilter(object.AttributeContentType, eacl.MatchStringNotEqual, "application/javascript"),
@@ -69,7 +73,7 @@ func (b *Generator) createRecords(hashedEmail string, currentEpoch uint64, msPer
 			return rec
 		},
 		func() eacl.Record {
-			return eacl.ConstructRecord(eacl.ActionDeny, eacl.OperationPut, []eacl.Target{eacl.NewTargetByRole(eacl.RoleOthers)})
+			return eacl.ConstructRecord(eacl.ActionDeny, eacl.OperationPut, othersTarget())
 		},
 	}
 
