@@ -59,7 +59,7 @@ jobs:
         run: mv ./bin/neofs-oauthz* ./bin/neofs-oauthz-${{ matrix.os.bin-name }}-${{ matrix.arch }}${{ (matrix.os.bin-name == 'windows' && '.exe') || '' }}
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: neofs-oauthz-${{ matrix.os.bin-name }}-${{ matrix.arch }}
           path: ./bin/neofs-oauthz*
