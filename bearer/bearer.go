@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
+	"slices"
 	"strconv"
 	"time"
 
@@ -45,9 +46,24 @@ func othersTarget() []eacl.Target {
 	return []eacl.Target{eacl.NewTargetByRole(eacl.RoleOthers)}
 }
 
-func (b *Generator) createRecords(hashedEmail string, currentEpoch uint64, msPerEpoch int64) []eacl.Record {
+func (b *Generator) createRecords(hashedEmail string, currentEpoch uint64, now time.Time, msPerEpoch int64) []eacl.Record {
 	epochs := uint64(b.config.ObjectMaxLifetime.Milliseconds() / msPerEpoch)
 	maxExpirationEpoch := strconv.FormatUint(currentEpoch+b.config.LifeTime+epochs, 10)
+
+	tokenLifetime := time.Duration(b.config.LifeTime) * time.Duration(msPerEpoch) * time.Millisecond
+	maxExpirationTime := strconv.FormatInt(now.Add(tokenLifetime+b.config.ObjectMaxLifetime).Unix(), 10)
+
+	putFilters := []eacl.Filter{
+		eacl.NewObjectPropertyFilter(b.config.EmailAttr, eacl.MatchStringEqual, hashedEmail),
+		eacl.NewObjectPropertyFilter(object.AttributeContentType, eacl.MatchStringNotEqual, "application/javascript"),
+		eacl.NewObjectPropertyFilter(object.AttributeContentType, eacl.MatchStringNotEqual, "application/x-javascript"),
+		eacl.NewObjectPropertyFilter(object.AttributeContentType, eacl.MatchStringNotEqual, "text/javascript"),
+		eacl.NewObjectPropertyFilter(object.AttributeContentType, eacl.MatchStringNotEqual, "application/xhtml+xml"),
+		eacl.NewObjectPropertyFilter(object.AttributeContentType, eacl.MatchStringNotEqual, "text/html"),
+		eacl.NewObjectPropertyFilter(object.AttributeContentType, eacl.MatchStringNotEqual, "text/htmlh"),
+		eacl.NewObjectPropertyFilter(object.AttributeContentType, eacl.MatchStringNotEqual, ""),
+		eacl.NewFilterObjectPayloadSizeIs(eacl.MatchNumLE, b.config.MaxObjectSize),
+	}
 
 	// order of records is important
 	records := []eacl.Record{
@@ -55,18 +71,19 @@ func (b *Generator) createRecords(hashedEmail string, currentEpoch uint64, msPer
 			eacl.ActionDeny, eacl.OperationPut, othersTarget(),
 			eacl.NewObjectPropertyFilter(object.AttributeContentType, eacl.MatchNotPresent, ""),
 		),
+		// objects with expiration epoch attribute, to be dropped after the transition period
 		eacl.ConstructRecord(
 			eacl.ActionAllow, eacl.OperationPut, othersTarget(),
-			eacl.NewObjectPropertyFilter(b.config.EmailAttr, eacl.MatchStringEqual, hashedEmail),
-			eacl.NewObjectPropertyFilter(object.AttributeContentType, eacl.MatchStringNotEqual, "application/javascript"),
-			eacl.NewObjectPropertyFilter(object.AttributeContentType, eacl.MatchStringNotEqual, "application/x-javascript"),
-			eacl.NewObjectPropertyFilter(object.AttributeContentType, eacl.MatchStringNotEqual, "text/javascript"),
-			eacl.NewObjectPropertyFilter(object.AttributeContentType, eacl.MatchStringNotEqual, "application/xhtml+xml"),
-			eacl.NewObjectPropertyFilter(object.AttributeContentType, eacl.MatchStringNotEqual, "text/html"),
-			eacl.NewObjectPropertyFilter(object.AttributeContentType, eacl.MatchStringNotEqual, "text/htmlh"),
-			eacl.NewObjectPropertyFilter(object.AttributeContentType, eacl.MatchStringNotEqual, ""),
-			eacl.NewFilterObjectPayloadSizeIs(eacl.MatchNumLE, b.config.MaxObjectSize),
-			eacl.NewObjectPropertyFilter(object.AttributeExpirationEpoch, eacl.MatchNumLE, maxExpirationEpoch),
+			append(slices.Clone(putFilters),
+				eacl.NewObjectPropertyFilter(object.AttributeExpirationEpoch, eacl.MatchNumLE, maxExpirationEpoch), //nolint:staticcheck // still supported by older objects
+			)...,
+		),
+		// objects with expiration time header field
+		eacl.ConstructRecord(
+			eacl.ActionAllow, eacl.OperationPut, othersTarget(),
+			append(slices.Clone(putFilters),
+				eacl.NewObjectPropertyFilter(object.FilterExpirationTime, eacl.MatchNumLE, maxExpirationTime),
+			)...,
 		),
 		eacl.ConstructRecord(
 			eacl.ActionDeny, eacl.OperationPut, othersTarget(),
@@ -103,7 +120,7 @@ func (b *Generator) createRecords(hashedEmail string, currentEpoch uint64, msPer
 func (b *Generator) NewBearer(email string, currentEpoch uint64, msPerEpoch int64) (string, string, error) {
 	var (
 		hashedEmail = fmt.Sprintf("%x", sha256.Sum256([]byte(email)))
-		records     = b.createRecords(hashedEmail, currentEpoch, msPerEpoch)
+		records     = b.createRecords(hashedEmail, currentEpoch, time.Now(), msPerEpoch)
 	)
 
 	t := eacl.ConstructTable(records)
